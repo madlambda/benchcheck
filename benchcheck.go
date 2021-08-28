@@ -1,0 +1,4 @@
+package benchcheck
+
+func GetModule() {
+}
