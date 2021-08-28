@@ -15,15 +15,17 @@ import (
 func GetModule(name string, version string) (string, error) {
 	// Reference: https://golang.org/ref/mod#go-mod-download
 	cmd := exec.Command("go", "mod", "download", "-json", fmt.Sprintf("%s@%s", name, version))
-	output, _ := cmd.CombinedOutput()
-	// TODO: handle errors
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return "", fmt.Errorf("error fetching module: %v : output: %v", err, output)
+	}
 
 	parsedResult := struct {
-		Error string // error loading module
-		Dir   string // absolute path to cached source root directory
+		Dir string // absolute path to cached source root directory
 	}{}
 
-	err := json.Unmarshal(output, &parsedResult)
+	err = json.Unmarshal(output, &parsedResult)
 	if err != nil {
 		return "", fmt.Errorf("error parsing %q : %v", string(output), err)
 	}

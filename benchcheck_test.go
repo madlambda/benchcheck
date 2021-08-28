@@ -19,6 +19,23 @@ func TestGetModule(t *testing.T) {
 			moduleName:    "github.com/madlambda/jtoh",
 			moduleVersion: "v0.1.0",
 		},
+		{
+			desc:          "UsingLatest",
+			moduleName:    "github.com/madlambda/jtoh",
+			moduleVersion: "latest",
+		},
+		{
+			desc:          "InvalidVersion",
+			moduleName:    "github.com/madlambda/jtoh",
+			moduleVersion: "StoNkS",
+			wantErr:       true,
+		},
+		{
+			desc:          "InvalidModule",
+			moduleName:    "git.duh/suchwrong/muchfail",
+			moduleVersion: "latest",
+			wantErr:       true,
+		},
 	}
 
 	for _, test := range tests {
