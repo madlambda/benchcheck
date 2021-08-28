@@ -25,6 +25,11 @@ func TestGetModule(t *testing.T) {
 			moduleVersion: "latest",
 		},
 		{
+			desc:          "UsingCommitSha",
+			moduleName:    "github.com/madlambda/jtoh",
+			moduleVersion: "5cd825858d7dcc41c3b453ed10ecf0983b139243",
+		},
+		{
 			desc:          "InvalidVersion",
 			moduleName:    "github.com/madlambda/jtoh",
 			moduleVersion: "StoNkS",
