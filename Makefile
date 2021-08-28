@@ -19,6 +19,10 @@ lint:
 test:
 	go test -timeout 10s -race -coverprofile=$(cov) ./...
 
+.PHONY: vet
+vet:
+	go vet ./...
+
 .PHONY: coverage
 coverage: test
 	go tool cover -html=$(cov) -o=$(covhtml)
