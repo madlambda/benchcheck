@@ -22,6 +22,10 @@ func GetModule(name string, version string) (string, error) {
 		Error string // error loading module
 		Dir   string // absolute path to cached source root directory
 	}{}
-	json.Unmarshal(output, &parsedResult)
+
+	err := json.Unmarshal(output, &parsedResult)
+	if err != nil {
+		return "", fmt.Errorf("error parsing %q : %v", string(output), err)
+	}
 	return parsedResult.Dir, nil
 }
