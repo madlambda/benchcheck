@@ -17,7 +17,7 @@ lint:
 
 .PHONY: test
 test:
-	go test -timeout 10s -race -coverprofile=$(cov) ./...
+	go test -timeout 60s -race -coverprofile=$(cov) ./...
 
 .PHONY: vet
 vet:
