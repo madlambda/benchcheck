@@ -99,7 +99,7 @@ func TestGetModule(t *testing.T) {
 }
 
 func getModuleVersion(t *testing.T, modDir string) string {
-	// This function abuses private details abou the modDir,
+	// This function abuses private details about the modDir,
 	// more specifically, the fact it is a Go cache dir.
 	// But it is at least decoupled from specific version systems.
 	// We couple on whatever interfaces Go provides.
