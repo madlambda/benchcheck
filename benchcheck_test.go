@@ -10,9 +10,6 @@ import (
 )
 
 func TestGetModule(t *testing.T) {
-	// Not extremely happy with the way the tests are coupled to changes
-	// on jtoh, like new releases would break latest logic here.
-	// But not testing this integrated with actual repos would be almost useless.
 	tests := []struct {
 		desc          string
 		moduleName    string
@@ -99,10 +96,6 @@ func TestGetModule(t *testing.T) {
 }
 
 func getModuleVersion(t *testing.T, modDir string) string {
-	// This function abuses private details abou the modDir,
-	// more specifically, the fact it is a Go cache dir.
-	// But it is at least decoupled from specific version systems.
-	// We couple on whatever interfaces Go provides.
 	modNameVersion := filepath.Base(modDir)
 	parsed := strings.Split(modNameVersion, "@")
 	if len(parsed) <= 1 {
