@@ -2,6 +2,8 @@ package benchcheck_test
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/madlambda/benchcheck"
@@ -13,6 +15,7 @@ func TestGetModule(t *testing.T) {
 		moduleName    string
 		moduleVersion string
 		wantErr       bool
+		wantVersion   string
 	}{
 		{
 			desc:          "ValidVersion",
@@ -23,11 +26,13 @@ func TestGetModule(t *testing.T) {
 			desc:          "UsingLatest",
 			moduleName:    "github.com/madlambda/jtoh",
 			moduleVersion: "latest",
+			wantVersion:   "v0.1.0",
 		},
 		{
 			desc:          "UsingCommitSha",
 			moduleName:    "github.com/madlambda/jtoh",
 			moduleVersion: "5cd825858d7dcc41c3b453ed10ecf0983b139243",
+			wantVersion:   "v0.1.1-0.20210731193031-5cd825858d7d",
 		},
 		{
 			desc:          "InvalidVersion",
@@ -72,6 +77,29 @@ func TestGetModule(t *testing.T) {
 			if !fileinfo.IsDir() {
 				t.Fatalf("want %q to be a dir, details : %v", modDir, fileinfo)
 			}
+
+			if test.wantVersion == "" {
+				test.wantVersion = test.moduleVersion
+			}
+
+			gotModuleVersion := getModuleVersion(t, modDir)
+			if gotModuleVersion != test.wantVersion {
+				t.Fatalf(
+					"got version %q from mod dir %q, wanted %q",
+					gotModuleVersion,
+					modDir,
+					test.wantVersion,
+				)
+			}
 		})
 	}
+}
+
+func getModuleVersion(t *testing.T, modDir string) string {
+	modNameVersion := filepath.Base(modDir)
+	parsed := strings.Split(modNameVersion, "@")
+	if len(parsed) <= 1 {
+		t.Fatalf("module cache dir supposed to be on the form 'module@version' got: %q", modDir)
+	}
+	return strings.Join(parsed[1:], "")
 }
