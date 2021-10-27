@@ -15,24 +15,34 @@ func TestGetModule(t *testing.T) {
 		moduleName    string
 		moduleVersion string
 		wantErr       bool
-		wantVersion   string
+		wantModInfo   ModuleInfo
 	}{
 		{
 			desc:          "ValidVersion",
 			moduleName:    "github.com/madlambda/jtoh",
 			moduleVersion: "v0.1.0",
+			wantModInfo: ModuleInfo{
+				Name:    "jtoh",
+				Version: "v0.1.0",
+			},
 		},
 		{
 			desc:          "UsingLatest",
 			moduleName:    "github.com/madlambda/jtoh",
 			moduleVersion: "latest",
-			wantVersion:   "v0.1.0",
+			wantModInfo: ModuleInfo{
+				Name:    "jtoh",
+				Version: "v0.1.0",
+			},
 		},
 		{
 			desc:          "UsingCommitSha",
 			moduleName:    "github.com/madlambda/jtoh",
 			moduleVersion: "5cd825858d7dcc41c3b453ed10ecf0983b139243",
-			wantVersion:   "v0.1.1-0.20210731193031-5cd825858d7d",
+			wantModInfo: ModuleInfo{
+				Name:    "jtoh",
+				Version: "v0.1.1-0.20210731193031-5cd825858d7d",
+			},
 		},
 		{
 			desc:          "InvalidVersion",
@@ -78,28 +88,32 @@ func TestGetModule(t *testing.T) {
 				t.Fatalf("want %q to be a dir, details : %v", modDir, fileinfo)
 			}
 
-			if test.wantVersion == "" {
-				test.wantVersion = test.moduleVersion
-			}
-
-			gotModuleVersion := getModuleVersion(t, modDir)
-			if gotModuleVersion != test.wantVersion {
+			gotModInfo := getModuleInfo(t, modDir)
+			if gotModInfo != test.wantModInfo {
 				t.Fatalf(
-					"got version %q from mod dir %q, wanted %q",
-					gotModuleVersion,
+					"got module %v from mod dir %q, wanted %v",
+					gotModInfo,
 					modDir,
-					test.wantVersion,
+					test.wantModInfo,
 				)
 			}
 		})
 	}
 }
 
-func getModuleVersion(t *testing.T, modDir string) string {
+type ModuleInfo struct {
+	Name    string
+	Version string
+}
+
+func getModuleInfo(t *testing.T, modDir string) ModuleInfo {
 	modNameVersion := filepath.Base(modDir)
 	parsed := strings.Split(modNameVersion, "@")
 	if len(parsed) <= 1 {
 		t.Fatalf("module cache dir supposed to be on the form 'module@version' got: %q", modDir)
 	}
-	return strings.Join(parsed[1:], "")
+	return ModuleInfo{
+		Name:    parsed[0],
+		Version: strings.Join(parsed[1:], ""),
+	}
 }
