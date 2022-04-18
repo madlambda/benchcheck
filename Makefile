@@ -2,7 +2,7 @@ version?=$(shell git rev-list -1 HEAD)
 cov=coverage.out
 covhtml=coverage.html
 buildflags=-ldflags "-X main.Version=${version}"
-golangci_lint_version=1.45.0
+golangci_lint_version=v1.45.0
 name=benchcheck
 
 COVERAGE_REPORT ?= coverage.txt
