@@ -23,7 +23,7 @@ test:
 
 .PHONY: coverage
 coverage: 
-	go test -count=1 -coverprofile=$(COVERAGE_REPORT) -coverpkg=./...  ./...
+	go test -count=1 -coverprofile=$(COVERAGE_REPORT) ./...
 
 .PHONY: coverage/show
 coverage/show: coverage
