@@ -7,9 +7,29 @@ import (
 	"testing"
 
 	"github.com/madlambda/benchcheck"
+	"github.com/madlambda/spells/assert"
 )
 
 func TestGetModule(t *testing.T) {
+	t.Parallel()
+
+	type ModuleInfo struct {
+		Name    string
+		Version string
+	}
+
+	getModuleInfo := func(t *testing.T, modDir string) ModuleInfo {
+		modNameVersion := filepath.Base(modDir)
+		parsed := strings.Split(modNameVersion, "@")
+		if len(parsed) <= 1 {
+			t.Fatalf("module cache dir supposed to be on the form 'module@version' got: %q", modDir)
+		}
+		return ModuleInfo{
+			Name:    parsed[0],
+			Version: strings.Join(parsed[1:], ""),
+		}
+	}
+
 	tests := []struct {
 		desc          string
 		moduleName    string
@@ -60,7 +80,9 @@ func TestGetModule(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			modDir, err := benchcheck.GetModule(test.moduleName, test.moduleVersion)
+			t.Parallel()
+
+			mod, err := benchcheck.GetModule(test.moduleName, test.moduleVersion)
 
 			if test.wantErr {
 				if err == nil {
@@ -78,22 +100,22 @@ func TestGetModule(t *testing.T) {
 				)
 			}
 
-			fileinfo, err := os.Stat(modDir)
+			fileinfo, err := os.Stat(mod.Path())
 
 			if err != nil {
-				t.Fatalf("os.Stat(%q): unexpected error : %v", modDir, err)
+				t.Fatalf("os.Stat(%q): unexpected error : %v", mod.Path(), err)
 			}
 
 			if !fileinfo.IsDir() {
-				t.Fatalf("want %q to be a dir, details : %v", modDir, fileinfo)
+				t.Fatalf("want %q to be a dir, details : %v", mod.Path(), fileinfo)
 			}
 
-			gotModInfo := getModuleInfo(t, modDir)
+			gotModInfo := getModuleInfo(t, mod.Path())
 			if gotModInfo != test.wantModInfo {
 				t.Fatalf(
 					"got module %v from mod dir %q, wanted %v",
 					gotModInfo,
-					modDir,
+					mod.Path(),
 					test.wantModInfo,
 				)
 			}
@@ -101,19 +123,40 @@ func TestGetModule(t *testing.T) {
 	}
 }
 
-type ModuleInfo struct {
-	Name    string
-	Version string
+func TestBenchModule(t *testing.T) {
+	t.Parallel()
+
+	const (
+		module     = "github.com/madlambda/benchcheck"
+		modversion = "73348d58a038746fd4f92dd1e77344a58a4f8505"
+	)
+	mod, err := benchcheck.GetModule(module, modversion)
+	assert.NoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
+
+	res, err := benchcheck.RunBench(mod)
+	assert.NoError(t, err, "benchcheck.RunBench(%v)", mod)
+
+	assert.EqualInts(t, 1, len(res), "want single result, got: %v", res)
+	if !strings.HasPrefix(res[0], "BenchmarkFake") {
+		t.Fatalf("bench result has wrong prefix: %s", res[0])
+	}
+	if !strings.Contains(res[0], "ns/op") {
+		t.Fatalf("bench result should contain time info: %s", res[0])
+	}
 }
 
-func getModuleInfo(t *testing.T, modDir string) ModuleInfo {
-	modNameVersion := filepath.Base(modDir)
-	parsed := strings.Split(modNameVersion, "@")
-	if len(parsed) <= 1 {
-		t.Fatalf("module cache dir supposed to be on the form 'module@version' got: %q", modDir)
-	}
-	return ModuleInfo{
-		Name:    parsed[0],
-		Version: strings.Join(parsed[1:], ""),
-	}
+func TestBenchModuleNoBenchmarks(t *testing.T) {
+	t.Parallel()
+
+	const (
+		module     = "github.com/madlambda/benchcheck"
+		modversion = "f15923bf230cc7331ad869fcdaac35172f8b7f38"
+	)
+	mod, err := benchcheck.GetModule(module, modversion)
+	assert.NoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
+
+	res, err := benchcheck.RunBench(mod)
+	assert.NoError(t, err, "benchcheck.RunBench(%v)", mod)
+
+	assert.EqualInts(t, 0, len(res), "want no results, got: %v", res)
 }
