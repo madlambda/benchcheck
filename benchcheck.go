@@ -45,7 +45,6 @@ func (m Module) String() string {
 // should be considered read only (it is part of the Go cache).
 // The returned path is an absolute path.
 //
-// Since this function relies on running the "go" command to download modules
 // Any errors running "go" can be inspected in detail by
 // checking if the returned is a CmdError.
 func GetModule(name string, version string) (Module, error) {
