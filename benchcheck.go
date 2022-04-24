@@ -58,6 +58,14 @@ func (m Module) String() string {
 	return fmt.Sprintf("go module at %q", m.path)
 }
 
+// String provides the string representation of a bench result
+func (br BenchResult) String() string {
+	return fmt.Sprintf(
+		"%s: old %s: new %s: delta: %.2f%%",
+		br.Name, br.Old, br.New, br.Delta,
+	)
+}
+
 // GetModule will download a specific version of a module and
 // return a directory where you can find the module code.
 // It uses "go get" to do the job, so the returned directory
