@@ -16,7 +16,8 @@ type Module struct {
 }
 
 // StatResult is the full result showing performance
-// differences between two benchmark runs (set of benchmark functions).
+// differences between two benchmark runs (set of benchmark functions)
+// for a specific metric, like time/op or speed.
 type StatResult struct {
 	Metric       string
 	BenchResults []BenchResult
@@ -143,10 +144,10 @@ func Stat(oldres []string, newres []string) ([]StatResult, error) {
 		DeltaTest:  benchstat.UTest,
 	}
 	if err := c.AddFile("old", resultsReader(oldres)); err != nil {
-		return nil, fmt.Errorf("parsing old results: %v", oldres)
+		return nil, fmt.Errorf("parsing old results: %v", err)
 	}
 	if err := c.AddFile("new", resultsReader(newres)); err != nil {
-		return nil, fmt.Errorf("parsing new results: %v", oldres)
+		return nil, fmt.Errorf("parsing new results: %v", err)
 	}
 	return newStatResults(c.Tables()), nil
 }
