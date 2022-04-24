@@ -19,16 +19,22 @@ type Module struct {
 // differences between two benchmark runs (set of benchmark functions)
 // for a specific metric, like time/op or speed.
 type StatResult struct {
-	Metric       string
+	// Name of metric
+	Metric string
+	// List of results for a specific metric
 	BenchResults []BenchResult
 }
 
 // BenchResult is the result showing performance differences
 // for a single benchmark function.
 type BenchResult struct {
-	Name  string
-	Old   string
-	New   string
+	// Name of the benchmark function
+	Name string
+	// Performance summary on the old benchmark
+	Old string
+	// Performance summary on the new benchmark
+	New string
+	// Delta between the old and new performance
 	Delta float64
 }
 
