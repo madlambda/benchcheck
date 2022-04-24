@@ -3,13 +3,30 @@ package benchcheck
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os/exec"
 	"strings"
+
+	"golang.org/x/perf/benchstat"
 )
 
 // Module represents a Go module.
 type Module struct {
 	path string
+}
+
+// StatResult is the full result showing performance
+// differences between two benchmark runs (set of benchmark functions).
+type StatResult struct {
+	Metric       string
+	BenchResults []BenchResult
+}
+
+// BenchResult is the result showing performance differences
+// for a single benchmark function.
+type BenchResult struct {
+	Name  string
+	Delta float64
 }
 
 // CmdError represents an error running a specific command.
@@ -73,7 +90,7 @@ func GetModule(name string, version string) (Module, error) {
 
 // RunBench will run all benchmarks present at the given module.
 // It returns an slice of strings where each string is the result
-// of a benchmark.
+// of a benchmark from Go test.
 //
 // This function relies on running the "go" command to run benchmarks.
 // Any errors running "go" can be inspected in detail by
@@ -98,4 +115,60 @@ func RunBench(mod Module) ([]string, error) {
 		}
 	}
 	return results, nil
+}
+
+// Stat compares two benchmark results providing a set of results.
+// oldres and newres must be multiple strings where each line follows
+// Go's benchmark output format.
+func Stat(oldres []string, newres []string) ([]StatResult, error) {
+	// We are using benchstat defaults:
+	//	- https://cs.opensource.google/go/x/perf/+/master:cmd/benchstat/main.go;l=117
+	const (
+		alpha   = 0.05
+		geomean = false
+	)
+	c := &benchstat.Collection{
+		Alpha:      alpha,
+		AddGeoMean: geomean,
+		DeltaTest:  benchstat.UTest,
+	}
+	if err := c.AddFile("old", resultsReader(oldres)); err != nil {
+		return nil, fmt.Errorf("parsing old results: %v", oldres)
+	}
+	if err := c.AddFile("new", resultsReader(newres)); err != nil {
+		return nil, fmt.Errorf("parsing new results: %v", oldres)
+	}
+	return newStatResults(c.Tables()), nil
+}
+
+func newStatResults(tables []*benchstat.Table) []StatResult {
+	res := make([]StatResult, len(tables))
+
+	for i, table := range tables {
+		res[i] = StatResult{
+			Metric:       table.Metric,
+			BenchResults: newBenchResults(table.Rows),
+		}
+		fmt.Println(table.Metric)
+	}
+
+	return res
+}
+
+func newBenchResults(rows []*benchstat.Row) []BenchResult {
+	res := make([]BenchResult, len(rows))
+
+	for i, row := range rows {
+		fmt.Printf("%+v\n", row)
+		res[i] = BenchResult{
+			Name:  row.Benchmark,
+			Delta: row.PctDelta,
+		}
+	}
+
+	return res
+}
+
+func resultsReader(res []string) io.Reader {
+	return strings.NewReader(strings.Join(res, "\n"))
 }
