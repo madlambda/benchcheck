@@ -6,6 +6,7 @@ package fake
 
 import "time"
 
+// Do is a fake function that only sleeps.
 func Do() {
 	time.Sleep(500 * time.Millisecond)
 }

@@ -53,11 +53,11 @@ benchcheck cool.go.module v0.0.1 v0.0.2 -time-delta +13.31%
 Now doing the same but also checking for allocation regression:
 
 ```
-benchcheck cool.go.module v0.0.1 v0.0.2 -time-delta +10% -alloc-delta +15% -allocs-delta +20%
+benchcheck cool.go.module v0.0.1 v0.0.2 -alloc-delta +15% -allocs-delta +20%
 ```
 
 You can also check if your code got faster and use the check to
-I don't know..celebrate ? =P
+I don't know... Celebrate ? =P
 
 ```
 benchcheck cool.go.module v0.0.1 v0.0.2 -time-delta -20%

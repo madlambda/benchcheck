@@ -15,3 +15,5 @@
 # vendor/
 #
 cmd/benchcheck/benchcheck
+/coverage.html
+/coverage.txt

@@ -2,8 +2,10 @@ version?=$(shell git rev-list -1 HEAD)
 cov=coverage.out
 covhtml=coverage.html
 buildflags=-ldflags "-X main.Version=${version}"
-golangci_lint_version=1.41.1
+golangci_lint_version=v1.45.0
 name=benchcheck
+
+COVERAGE_REPORT ?= coverage.txt
 
 all: lint test build
 
@@ -13,19 +15,19 @@ build:
 
 .PHONY: lint
 lint:
-	docker run --rm -v `pwd`:/app -w /app golangci/golangci-lint:v$(golangci_lint_version)  golangci-lint run ./...
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_lint_version) run ./...
 
 .PHONY: test
 test:
-	go test -timeout 60s -race -coverprofile=$(cov) ./...
-
-.PHONY: vet
-vet:
-	go vet ./...
+	go test -timeout 60s -race ./...
 
 .PHONY: coverage
-coverage: test
-	go tool cover -html=$(cov) -o=$(covhtml)
+coverage: 
+	go test -count=1 -coverprofile=$(COVERAGE_REPORT) ./...
+
+.PHONY: coverage/show
+coverage/show: coverage
+	go tool cover -html=$(COVERAGE_REPORT)
 
 .PHONY: install
 install:
