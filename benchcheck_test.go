@@ -200,15 +200,35 @@ func TestStatBenchmarkResults(t *testing.T) {
 				{
 					Metric: "time/op",
 					BenchResults: []benchcheck.BenchResult{
-						{Name: "GobEncode", Delta: -13.3},
-						{Name: "JSONEncode", Delta: 0.0},
+						{
+							Name:  "GobEncode",
+							Delta: -13.3,
+							Old:   "13.6ms ± 1%",
+							New:   "11.8ms ± 1%",
+						},
+						{
+							Name:  "JSONEncode",
+							Delta: 0.0,
+							Old:   "32.1ms ± 1%",
+							New:   "31.8ms ± 1%",
+						},
 					},
 				},
 				{
 					Metric: "speed",
 					BenchResults: []benchcheck.BenchResult{
-						{Name: "GobEncode", Delta: 15.35},
-						{Name: "JSONEncode", Delta: 0.0},
+						{
+							Name:  "GobEncode",
+							Delta: 15.35,
+							Old:   "56.4MB/s ± 1%",
+							New:   "65.1MB/s ± 1%",
+						},
+						{
+							Name:  "JSONEncode",
+							Delta: 0.0,
+							Old:   "60.4MB/s ± 1%",
+							New:   "61.1MB/s ± 2%",
+						},
 					},
 				},
 			},

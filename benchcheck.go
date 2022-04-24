@@ -26,6 +26,8 @@ type StatResult struct {
 // for a single benchmark function.
 type BenchResult struct {
 	Name  string
+	Old   string
+	New   string
 	Delta float64
 }
 
@@ -149,7 +151,6 @@ func newStatResults(tables []*benchstat.Table) []StatResult {
 			Metric:       table.Metric,
 			BenchResults: newBenchResults(table.Rows),
 		}
-		fmt.Println(table.Metric)
 	}
 
 	return res
@@ -159,9 +160,16 @@ func newBenchResults(rows []*benchstat.Row) []BenchResult {
 	res := make([]BenchResult, len(rows))
 
 	for i, row := range rows {
-		fmt.Printf("%+v\n", row)
+		if len(row.Metrics) != 2 {
+			// Since we always compare 2 sets of benchmarks there should be
+			// 2 metrics per row always.
+			panic(fmt.Errorf("should always have 2 metrics, instead got: %d", len(row.Metrics)))
+		}
+
 		res[i] = BenchResult{
 			Name:  row.Benchmark,
+			Old:   row.Metrics[0].Format(row.Scaler),
+			New:   row.Metrics[1].Format(row.Scaler),
 			Delta: row.PctDelta,
 		}
 	}
