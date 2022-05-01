@@ -30,7 +30,7 @@ type StatResult struct {
 type BenchResult struct {
 	// Name of the benchmark function
 	Name string
-	// Performance summary on the old benchmark
+	// Old is the performance summary of the old benchmark.
 	Old string
 	// Performance summary on the new benchmark
 	New string
