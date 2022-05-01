@@ -173,7 +173,7 @@ func assertNoError(t *testing.T, err error, details ...interface{}) {
 	msg := ""
 
 	if len(details) > 0 {
-		msg = fmt.Sprintf(details[0].(string), details[1:]...) + ":"
+		msg = fmt.Sprintf(details[0].(string), details[1:]...) + ": "
 	}
 
 	msg += err.Error()
