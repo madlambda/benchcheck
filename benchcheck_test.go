@@ -82,7 +82,8 @@ func TestGetModule(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for _, tc := range tests {
+		test := tc
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 
