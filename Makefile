@@ -23,7 +23,7 @@ test:
 
 .PHONY: coverage
 coverage: 
-	go test -count=1 -coverprofile=$(COVERAGE_REPORT) ./...
+	go test -covermode=atomic -coverprofile=$(COVERAGE_REPORT) ./...
 
 .PHONY: coverage/show
 coverage/show: coverage

@@ -357,7 +357,9 @@ func TestStatBenchmarkResults(t *testing.T) {
 		return math.Abs(x-y) < ε && math.Abs(y-x) < ε
 	})
 
-	for _, tcase := range tcases {
+	for _, tc := range tcases {
+		tcase := tc
+
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
