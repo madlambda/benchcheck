@@ -1,6 +1,8 @@
 package benchcheck_test
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -133,10 +135,10 @@ func TestBenchModule(t *testing.T) {
 		modversion = "73348d58a038746fd4f92dd1e77344a58a4f8505"
 	)
 	mod, err := benchcheck.GetModule(module, modversion)
-	assert.NoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
+	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
 	res, err := benchcheck.RunBench(mod)
-	assert.NoError(t, err, "benchcheck.RunBench(%v)", mod)
+	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 1, len(res), "want single result, got: %v", res)
 	if !strings.HasPrefix(res[0], "BenchmarkFake") {
@@ -155,10 +157,10 @@ func TestBenchModuleNoBenchmarks(t *testing.T) {
 		modversion = "f15923bf230cc7331ad869fcdaac35172f8b7f38"
 	)
 	mod, err := benchcheck.GetModule(module, modversion)
-	assert.NoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
+	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
 	res, err := benchcheck.RunBench(mod)
-	assert.NoError(t, err, "benchcheck.RunBench(%v)", mod)
+	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 0, len(res), "want no results, got: %v", res)
 }
@@ -170,6 +172,8 @@ func TestStatBenchmarkResults(t *testing.T) {
 		newres []string
 		want   []benchcheck.StatResult
 	}
+
+	t.Parallel()
 
 	tcases := []testcase{
 		{
@@ -233,6 +237,119 @@ func TestStatBenchmarkResults(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "benchmarks not present on both old/new are ignored",
+			oldres: []string{
+				"BenchmarkGobEncode   	100	  13552735 ns/op	  56.63 MB/s",
+				"BenchmarkJSONEncode  	 50	  32395067 ns/op	  59.90 MB/s",
+				"BenchmarkGobEncode   	100	  13553943 ns/op	  56.63 MB/s",
+				"BenchmarkJSONEncode  	 50	  32334214 ns/op	  60.01 MB/s",
+				"BenchmarkGobEncode   	100	  13606356 ns/op	  56.41 MB/s",
+				"BenchmarkJSONEncode  	 50	  31992891 ns/op	  60.65 MB/s",
+				"BenchmarkGobEncode   	100	  13683198 ns/op	  56.09 MB/s",
+				"BenchmarkJSONEncode  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+			},
+			newres: []string{
+				"BenchmarkGobEncode   	 100	  11773189 ns/op	  65.19 MB/s",
+				"BenchmarkJSONEncode  	  50	  32036529 ns/op	  60.57 MB/s",
+				"BenchmarkGobEncode   	 100	  11942588 ns/op	  64.27 MB/s",
+				"BenchmarkJSONEncode  	  50	  32156552 ns/op	  60.34 MB/s",
+				"BenchmarkGobEncode   	 100	  11786159 ns/op	  65.12 MB/s",
+				"BenchmarkJSONEncode  	  50	  31288355 ns/op	  62.02 MB/s",
+				"BenchmarkGobEncode   	 100	  11628583 ns/op	  66.00 MB/s",
+				"BenchmarkJSONEncode  	  50	  31559706 ns/op	  61.49 MB/s",
+				"BenchmarkGobEncode   	 100	  11815924 ns/op	  64.96 MB/s",
+				"BenchmarkJSONEncode  	  50	  31765634 ns/op	  61.09 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+			},
+			want: []benchcheck.StatResult{
+				{
+					Metric: "time/op",
+					BenchResults: []benchcheck.BenchResult{
+						{
+							Name:  "GobEncode",
+							Delta: -13.3,
+							Old:   "13.6ms ± 1%",
+							New:   "11.8ms ± 1%",
+						},
+						{
+							Name:  "JSONEncode",
+							Delta: 0.0,
+							Old:   "32.1ms ± 1%",
+							New:   "31.8ms ± 1%",
+						},
+					},
+				},
+				{
+					Metric: "speed",
+					BenchResults: []benchcheck.BenchResult{
+						{
+							Name:  "GobEncode",
+							Delta: 15.35,
+							Old:   "56.4MB/s ± 1%",
+							New:   "65.1MB/s ± 1%",
+						},
+						{
+							Name:  "JSONEncode",
+							Delta: 0.0,
+							Old:   "60.4MB/s ± 1%",
+							New:   "61.1MB/s ± 2%",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "old and new with no common benchmarks produce empty stats",
+			oldres: []string{
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+			},
+			newres: []string{
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+			},
+			want: []benchcheck.StatResult{},
+		},
+		{
+			name:   "old has no benchmarks produce empty stats",
+			oldres: []string{},
+			newres: []string{
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+			},
+			want: []benchcheck.StatResult{},
+		},
+		{
+			name: "new has no benchmarks produce empty stats",
+			oldres: []string{
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+			},
+			newres: []string{},
+			want:   []benchcheck.StatResult{},
+		},
+		{
+			name:   "no benchmarks produce empty stats",
+			oldres: []string{},
+			newres: []string{},
+			want:   []benchcheck.StatResult{},
+		},
 	}
 
 	cmpfloats := cmp.Comparer(func(x, y float64) bool {
@@ -242,6 +359,8 @@ func TestStatBenchmarkResults(t *testing.T) {
 
 	for _, tcase := range tcases {
 		t.Run(tcase.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := benchcheck.Stat(tcase.oldres, tcase.newres)
 			assert.NoError(t, err)
 
@@ -250,4 +369,27 @@ func TestStatBenchmarkResults(t *testing.T) {
 			}
 		})
 	}
+}
+
+func assertNoError(t *testing.T, err error, details ...interface{}) {
+	t.Helper()
+
+	if err == nil {
+		return
+	}
+
+	msg := ""
+
+	if len(details) > 0 {
+		msg = fmt.Sprintf(details[0].(string), details[1:]...) + ": "
+	}
+
+	msg += err.Error()
+
+	var cmderr *benchcheck.CmdError
+	if errors.As(err, &cmderr) {
+		msg += "\ncmd stdout + stderr:\n" + cmderr.Output
+	}
+
+	t.Fatal(msg)
 }
