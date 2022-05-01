@@ -151,7 +151,7 @@ func TestBenchModuleNoBenchmarks(t *testing.T) {
 	t.Parallel()
 
 	const (
-		module     = "github.com/madlambda/benchchec"
+		module     = "github.com/madlambda/benchcheck"
 		modversion = "f15923bf230cc7331ad869fcdaac35172f8b7f38"
 	)
 	mod, err := benchcheck.GetModule(module, modversion)
