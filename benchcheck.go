@@ -34,7 +34,7 @@ type BenchResult struct {
 	Old string
 	// New is the performance summary of the new benchmark.
 	New string
-	// Delta between the old and new performance
+	// Delta between the old and new performance summaries.
 	Delta float64
 }
 
