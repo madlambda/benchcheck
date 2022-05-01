@@ -3,11 +3,13 @@ package benchcheck_test
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/madlambda/benchcheck"
 	"github.com/madlambda/spells/assert"
 )
@@ -80,7 +82,8 @@ func TestGetModule(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for _, tc := range tests {
+		test := tc
 		t.Run(test.desc, func(t *testing.T) {
 			t.Parallel()
 
@@ -161,6 +164,214 @@ func TestBenchModuleNoBenchmarks(t *testing.T) {
 	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 0, len(res), "want no results, got: %v", res)
+}
+
+func TestStatBenchmarkResults(t *testing.T) {
+	type testcase struct {
+		name   string
+		oldres []string
+		newres []string
+		want   []benchcheck.StatResult
+	}
+
+	t.Parallel()
+
+	tcases := []testcase{
+		{
+			name: "benchstat basic example",
+			oldres: []string{
+				"BenchmarkGobEncode   	100	  13552735 ns/op	  56.63 MB/s",
+				"BenchmarkJSONEncode  	 50	  32395067 ns/op	  59.90 MB/s",
+				"BenchmarkGobEncode   	100	  13553943 ns/op	  56.63 MB/s",
+				"BenchmarkJSONEncode  	 50	  32334214 ns/op	  60.01 MB/s",
+				"BenchmarkGobEncode   	100	  13606356 ns/op	  56.41 MB/s",
+				"BenchmarkJSONEncode  	 50	  31992891 ns/op	  60.65 MB/s",
+				"BenchmarkGobEncode   	100	  13683198 ns/op	  56.09 MB/s",
+				"BenchmarkJSONEncode  	 50	  31735022 ns/op	  61.15 MB/s",
+			},
+			newres: []string{
+				"BenchmarkGobEncode   	 100	  11773189 ns/op	  65.19 MB/s",
+				"BenchmarkJSONEncode  	  50	  32036529 ns/op	  60.57 MB/s",
+				"BenchmarkGobEncode   	 100	  11942588 ns/op	  64.27 MB/s",
+				"BenchmarkJSONEncode  	  50	  32156552 ns/op	  60.34 MB/s",
+				"BenchmarkGobEncode   	 100	  11786159 ns/op	  65.12 MB/s",
+				"BenchmarkJSONEncode  	  50	  31288355 ns/op	  62.02 MB/s",
+				"BenchmarkGobEncode   	 100	  11628583 ns/op	  66.00 MB/s",
+				"BenchmarkJSONEncode  	  50	  31559706 ns/op	  61.49 MB/s",
+				"BenchmarkGobEncode   	 100	  11815924 ns/op	  64.96 MB/s",
+				"BenchmarkJSONEncode  	  50	  31765634 ns/op	  61.09 MB/s",
+			},
+			want: []benchcheck.StatResult{
+				{
+					Metric: "time/op",
+					BenchResults: []benchcheck.BenchResult{
+						{
+							Name:  "GobEncode",
+							Delta: -13.3,
+							Old:   "13.6ms ± 1%",
+							New:   "11.8ms ± 1%",
+						},
+						{
+							Name:  "JSONEncode",
+							Delta: 0.0,
+							Old:   "32.1ms ± 1%",
+							New:   "31.8ms ± 1%",
+						},
+					},
+				},
+				{
+					Metric: "speed",
+					BenchResults: []benchcheck.BenchResult{
+						{
+							Name:  "GobEncode",
+							Delta: 15.35,
+							Old:   "56.4MB/s ± 1%",
+							New:   "65.1MB/s ± 1%",
+						},
+						{
+							Name:  "JSONEncode",
+							Delta: 0.0,
+							Old:   "60.4MB/s ± 1%",
+							New:   "61.1MB/s ± 2%",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "benchmarks not present on both old/new are ignored",
+			oldres: []string{
+				"BenchmarkGobEncode   	100	  13552735 ns/op	  56.63 MB/s",
+				"BenchmarkJSONEncode  	 50	  32395067 ns/op	  59.90 MB/s",
+				"BenchmarkGobEncode   	100	  13553943 ns/op	  56.63 MB/s",
+				"BenchmarkJSONEncode  	 50	  32334214 ns/op	  60.01 MB/s",
+				"BenchmarkGobEncode   	100	  13606356 ns/op	  56.41 MB/s",
+				"BenchmarkJSONEncode  	 50	  31992891 ns/op	  60.65 MB/s",
+				"BenchmarkGobEncode   	100	  13683198 ns/op	  56.09 MB/s",
+				"BenchmarkJSONEncode  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+			},
+			newres: []string{
+				"BenchmarkGobEncode   	 100	  11773189 ns/op	  65.19 MB/s",
+				"BenchmarkJSONEncode  	  50	  32036529 ns/op	  60.57 MB/s",
+				"BenchmarkGobEncode   	 100	  11942588 ns/op	  64.27 MB/s",
+				"BenchmarkJSONEncode  	  50	  32156552 ns/op	  60.34 MB/s",
+				"BenchmarkGobEncode   	 100	  11786159 ns/op	  65.12 MB/s",
+				"BenchmarkJSONEncode  	  50	  31288355 ns/op	  62.02 MB/s",
+				"BenchmarkGobEncode   	 100	  11628583 ns/op	  66.00 MB/s",
+				"BenchmarkJSONEncode  	  50	  31559706 ns/op	  61.49 MB/s",
+				"BenchmarkGobEncode   	 100	  11815924 ns/op	  64.96 MB/s",
+				"BenchmarkJSONEncode  	  50	  31765634 ns/op	  61.09 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+			},
+			want: []benchcheck.StatResult{
+				{
+					Metric: "time/op",
+					BenchResults: []benchcheck.BenchResult{
+						{
+							Name:  "GobEncode",
+							Delta: -13.3,
+							Old:   "13.6ms ± 1%",
+							New:   "11.8ms ± 1%",
+						},
+						{
+							Name:  "JSONEncode",
+							Delta: 0.0,
+							Old:   "32.1ms ± 1%",
+							New:   "31.8ms ± 1%",
+						},
+					},
+				},
+				{
+					Metric: "speed",
+					BenchResults: []benchcheck.BenchResult{
+						{
+							Name:  "GobEncode",
+							Delta: 15.35,
+							Old:   "56.4MB/s ± 1%",
+							New:   "65.1MB/s ± 1%",
+						},
+						{
+							Name:  "JSONEncode",
+							Delta: 0.0,
+							Old:   "60.4MB/s ± 1%",
+							New:   "61.1MB/s ± 2%",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "old and new with no common benchmarks produce empty stats",
+			oldres: []string{
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+			},
+			newres: []string{
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+			},
+			want: []benchcheck.StatResult{},
+		},
+		{
+			name:   "old has no benchmarks produce empty stats",
+			oldres: []string{},
+			newres: []string{
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyNew  	  50	  31735022 ns/op	  61.15 MB/s",
+			},
+			want: []benchcheck.StatResult{},
+		},
+		{
+			name: "new has no benchmarks produce empty stats",
+			oldres: []string{
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+				"BenchmarkOnlyOld  	 50	  31735022 ns/op	  61.15 MB/s",
+			},
+			newres: []string{},
+			want:   []benchcheck.StatResult{},
+		},
+		{
+			name:   "no benchmarks produce empty stats",
+			oldres: []string{},
+			newres: []string{},
+			want:   []benchcheck.StatResult{},
+		},
+	}
+
+	cmpfloats := cmp.Comparer(func(x, y float64) bool {
+		const ε = 0.01
+		return math.Abs(x-y) < ε && math.Abs(y-x) < ε
+	})
+
+	for _, tc := range tcases {
+		tcase := tc
+
+		t.Run(tcase.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := benchcheck.Stat(tcase.oldres, tcase.newres)
+			assertNoError(t, err)
+
+			if diff := cmp.Diff(got, tcase.want, cmpfloats); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
 }
 
 func assertNoError(t *testing.T, err error, details ...interface{}) {
