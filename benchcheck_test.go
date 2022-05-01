@@ -1,6 +1,8 @@
 package benchcheck_test
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -131,10 +133,10 @@ func TestBenchModule(t *testing.T) {
 		modversion = "73348d58a038746fd4f92dd1e77344a58a4f8505"
 	)
 	mod, err := benchcheck.GetModule(module, modversion)
-	assert.NoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
+	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
 	res, err := benchcheck.RunBench(mod)
-	assert.NoError(t, err, "benchcheck.RunBench(%v)", mod)
+	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 1, len(res), "want single result, got: %v", res)
 	if !strings.HasPrefix(res[0], "BenchmarkFake") {
@@ -153,10 +155,33 @@ func TestBenchModuleNoBenchmarks(t *testing.T) {
 		modversion = "f15923bf230cc7331ad869fcdaac35172f8b7f38"
 	)
 	mod, err := benchcheck.GetModule(module, modversion)
-	assert.NoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
+	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
 	res, err := benchcheck.RunBench(mod)
-	assert.NoError(t, err, "benchcheck.RunBench(%v)", mod)
+	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 0, len(res), "want no results, got: %v", res)
+}
+
+func assertNoError(t *testing.T, err error, details ...interface{}) {
+	t.Helper()
+
+	if err == nil {
+		return
+	}
+
+	msg := ""
+
+	if len(details) > 0 {
+		msg = fmt.Sprintf(details[0].(string), details[1:]...) + ": "
+	}
+
+	msg += err.Error()
+
+	var cmderr *benchcheck.CmdError
+	if errors.As(err, &cmderr) {
+		msg += "\ncmd stdout + stderr:\n" + cmderr.Output
+	}
+
+	t.Fatal(msg)
 }
