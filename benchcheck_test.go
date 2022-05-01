@@ -362,7 +362,7 @@ func TestStatBenchmarkResults(t *testing.T) {
 			t.Parallel()
 
 			got, err := benchcheck.Stat(tcase.oldres, tcase.newres)
-			assert.NoError(t, err)
+			assertNoError(t, err)
 
 			if diff := cmp.Diff(got, tcase.want, cmpfloats); diff != "" {
 				t.Fatal(diff)
