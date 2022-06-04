@@ -8,5 +8,5 @@ import "time"
 
 // Do is a fake function that only sleeps.
 func Do() {
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 }
