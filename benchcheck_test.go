@@ -374,7 +374,7 @@ func TestStatBenchmarkResults(t *testing.T) {
 	}
 }
 
-func TestBenchCheck(t *testing.T) {
+func TestStatModule(t *testing.T) {
 	type testcase struct {
 		name    string
 		project string
