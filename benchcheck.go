@@ -135,8 +135,9 @@ func RunBench(mod Module) ([]string, error) {
 }
 
 // Stat compares two benchmark results providing a set of results.
-// oldres and newres must be multiple strings where each line follows
-// Go's benchmark output format.
+// oldres and newres must be multiple strings where each line is a
+// benchmark result following Go's benchmark output format.
+// Line eg: "BenchmarkName  	 50	  31735022 ns/op	  61.15 MB/s"
 func Stat(oldres []string, newres []string) ([]StatResult, error) {
 	// We are using benchstat defaults:
 	//	- https://cs.opensource.google/go/x/perf/+/master:cmd/benchstat/main.go;l=117
@@ -167,7 +168,7 @@ func Stat(oldres []string, newres []string) ([]StatResult, error) {
 // Any errors running "go" can be inspected in detail by
 // checking if the returned error is a CmdError.
 func StatModule(name string, oldversion, newversion string) ([]StatResult, error) {
-	return nil, nil
+	return []StatResult{}, nil
 }
 
 func newStatResults(tables []*benchstat.Table) []StatResult {

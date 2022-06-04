@@ -353,11 +353,6 @@ func TestStatBenchmarkResults(t *testing.T) {
 		},
 	}
 
-	cmpfloats := cmp.Comparer(func(x, y float64) bool {
-		const ε = 0.01
-		return math.Abs(x-y) < ε && math.Abs(y-x) < ε
-	})
-
 	for _, tc := range tcases {
 		tcase := tc
 
@@ -367,17 +362,42 @@ func TestStatBenchmarkResults(t *testing.T) {
 			got, err := benchcheck.Stat(tcase.oldres, tcase.newres)
 			assertNoError(t, err)
 
-			if diff := cmp.Diff(got, tcase.want, cmpfloats); diff != "" {
-				t.Fatal(diff)
-			}
+			assertEqualStatResults(t, got, tcase.want)
 		})
 	}
 }
 
 func TestStatModule(t *testing.T) {
 	type testcase struct {
-		name    string
-		project string
+		name   string
+		module string
+		oldver string
+		newver string
+		want   []benchcheck.StatResult
+	}
+
+	t.Parallel()
+
+	tcases := []testcase{
+		{
+			name:   "stat benchcheck",
+			module: "github.com/madlambda/benchcheck",
+			oldver: "0f9165271a00b54163d3fc4c73d52a13c3747a75",
+			newver: "e90da7b50cf0e191004809e415c64319465286d7",
+			want:   []benchcheck.StatResult{},
+		},
+	}
+
+	for _, tc := range tcases {
+		tcase := tc
+
+		t.Run(tcase.name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
+			assertNoError(t, err)
+			assertEqualStatResults(t, got, tcase.want)
+		})
 	}
 }
 
@@ -402,4 +422,17 @@ func assertNoError(t *testing.T, err error, details ...interface{}) {
 	}
 
 	t.Fatal(msg)
+}
+
+func assertEqualStatResults(t *testing.T, got, want []benchcheck.StatResult) {
+	t.Helper()
+
+	cmpfloats := cmp.Comparer(func(x, y float64) bool {
+		const ε = 0.01
+		return math.Abs(x-y) < ε && math.Abs(y-x) < ε
+	})
+
+	if diff := cmp.Diff(got, want, cmpfloats); diff != "" {
+		t.Fatal(diff)
+	}
 }
