@@ -177,6 +177,8 @@ func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 // - Run benchmarks on each of them.
 // - Compare old vs new version benchmarks and return a stat results.
 //
+// This function relies on running the "go" command to run benchmarks.
+//
 // Any errors running "go" can be inspected in detail by
 // checking if the returned error is a CmdError.
 func StatModule(name string, oldversion, newversion string) ([]StatResult, error) {
