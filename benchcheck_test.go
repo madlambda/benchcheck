@@ -204,7 +204,7 @@ func TestStatBenchmarkResults(t *testing.T) {
 			want: []benchcheck.StatResult{
 				{
 					Metric: "time/op",
-					BenchResults: []benchcheck.BenchResult{
+					BenchDiffs: []benchcheck.BenchDiff{
 						{
 							Name:  "GobEncode",
 							Delta: -13.3,
@@ -221,7 +221,7 @@ func TestStatBenchmarkResults(t *testing.T) {
 				},
 				{
 					Metric: "speed",
-					BenchResults: []benchcheck.BenchResult{
+					BenchDiffs: []benchcheck.BenchDiff{
 						{
 							Name:  "GobEncode",
 							Delta: 15.35,
@@ -273,7 +273,7 @@ func TestStatBenchmarkResults(t *testing.T) {
 			want: []benchcheck.StatResult{
 				{
 					Metric: "time/op",
-					BenchResults: []benchcheck.BenchResult{
+					BenchDiffs: []benchcheck.BenchDiff{
 						{
 							Name:  "GobEncode",
 							Delta: -13.3,
@@ -290,7 +290,7 @@ func TestStatBenchmarkResults(t *testing.T) {
 				},
 				{
 					Metric: "speed",
-					BenchResults: []benchcheck.BenchResult{
+					BenchDiffs: []benchcheck.BenchDiff{
 						{
 							Name:  "GobEncode",
 							Delta: 15.35,
