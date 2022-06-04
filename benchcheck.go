@@ -119,14 +119,14 @@ func GetModule(name string, version string) (Module, error) {
 	return Module{path: parsedResult.Dir}, nil
 }
 
-// RunBench will run all benchmarks present at the given module.
-// It returns an slice of strings where each string is the result
-// of a benchmark from Go test.
+// RunBench will run all benchmarks present at the given module
+// return the benchmark results.
 //
 // This function relies on running the "go" command to run benchmarks.
+//
 // Any errors running "go" can be inspected in detail by
 // checking if the returned is a CmdError.
-func RunBench(mod Module) ([]string, error) {
+func RunBench(mod Module) (BenchResults, error) {
 	cmd := exec.Command("go", "test", "-bench=.", "./...")
 	cmd.Dir = mod.Path()
 
@@ -139,11 +139,9 @@ func RunBench(mod Module) ([]string, error) {
 		}
 	}
 	benchOut := strings.Split(string(out), "\n")
-	results := []string{}
+	results := BenchResults{}
 	for _, b := range benchOut {
-		if strings.HasPrefix(b, "Benchmark") {
-			results = append(results, b)
-		}
+		results.Add(b)
 	}
 	return results, nil
 }
@@ -152,7 +150,7 @@ func RunBench(mod Module) ([]string, error) {
 // oldres and newres must be multiple strings where each line is a
 // benchmark result following Go's benchmark output format.
 // Line eg: "BenchmarkName  	 50	  31735022 ns/op	  61.15 MB/s"
-func Stat(oldres []string, newres []string) ([]StatResult, error) {
+func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 	// We are using benchstat defaults:
 	//	- https://cs.opensource.google/go/x/perf/+/master:cmd/benchstat/main.go;l=117
 	const (
@@ -219,6 +217,6 @@ func newBenchResults(rows []*benchstat.Row) []BenchDiff {
 	return res
 }
 
-func resultsReader(res []string) io.Reader {
+func resultsReader(res BenchResults) io.Reader {
 	return strings.NewReader(strings.Join(res, "\n"))
 }
