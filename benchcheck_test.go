@@ -374,6 +374,13 @@ func TestStatBenchmarkResults(t *testing.T) {
 	}
 }
 
+func TestBenchCheck(t *testing.T) {
+	type testcase struct {
+		name    string
+		project string
+	}
+}
+
 func assertNoError(t *testing.T, err error, details ...interface{}) {
 	t.Helper()
 

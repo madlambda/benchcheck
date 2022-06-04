@@ -80,7 +80,7 @@ func (br BenchResult) String() string {
 // The returned path is an absolute path.
 //
 // Any errors running "go" can be inspected in detail by
-// checking if the returned is a CmdError.
+// checking if the returned error is a CmdError.
 func GetModule(name string, version string) (Module, error) {
 	// Reference: https://golang.org/ref/mod#go-mod-download
 	cmd := exec.Command("go", "mod", "download", "-json", fmt.Sprintf("%s@%s", name, version))
@@ -156,6 +156,18 @@ func Stat(oldres []string, newres []string) ([]StatResult, error) {
 		return nil, fmt.Errorf("parsing new results: %v", err)
 	}
 	return newStatResults(c.Tables()), nil
+}
+
+// StatModule will:
+//
+// - Download the specific versions of the given module.
+// - Run benchmarks on each of them.
+// - Compare old vs new version benchmarks and return a stat results.
+//
+// Any errors running "go" can be inspected in detail by
+// checking if the returned error is a CmdError.
+func StatModule(name string, oldversion, newversion string) ([]StatResult, error) {
+	return nil, nil
 }
 
 func newStatResults(tables []*benchstat.Table) []StatResult {
