@@ -373,12 +373,12 @@ func TestStatModule(t *testing.T) {
 		end   float64
 	}
 	type diff struct {
-		Name  string
-		Delta delta
+		name  string
+		delta delta
 	}
 	type result struct {
-		Metric string
-		Diffs  []diff
+		metric string
+		diffs  []diff
 	}
 	type testcase struct {
 		name   string
@@ -403,11 +403,11 @@ func TestStatModule(t *testing.T) {
 			newver: "e90da7b50cf0e191004809e415c64319465286d7",
 			want: []result{
 				{
-					Metric: "time/op",
-					Diffs: []diff{
+					metric: "time/op",
+					diffs: []diff{
 						{
-							Name:  "Fake",
-							Delta: delta{start: -80, end: -70},
+							name:  "Fake",
+							delta: delta{start: -80, end: -70},
 						},
 					},
 				},
@@ -420,11 +420,11 @@ func TestStatModule(t *testing.T) {
 			newver: "0f9165271a00b54163d3fc4c73d52a13c3747a75",
 			want: []result{
 				{
-					Metric: "time/op",
-					Diffs: []diff{
+					metric: "time/op",
+					diffs: []diff{
 						{
-							Name:  "Fake",
-							Delta: delta{start: 390, end: 400},
+							name:  "Fake",
+							delta: delta{start: 250, end: 400},
 						},
 					},
 				},
@@ -452,23 +452,23 @@ func TestStatModule(t *testing.T) {
 
 				t.Logf("got bench result: %v", gotRes)
 
-				assert.EqualStrings(t, wantRes.Metric, gotRes.Metric)
+				assert.EqualStrings(t, wantRes.metric, gotRes.Metric)
 
 				for j, gotDiff := range gotRes.BenchDiffs {
-					wantDiff := wantRes.Diffs[j]
+					wantDiff := wantRes.diffs[j]
 					gotName := stripProcCountFromBenchName(gotDiff.Name)
-					assert.EqualStrings(t, wantDiff.Name, gotName)
+					assert.EqualStrings(t, wantDiff.name, gotName)
 
-					if gotDiff.Delta < wantDiff.Delta.start {
+					if gotDiff.Delta < wantDiff.delta.start {
 						t.Fatalf(
 							"got delta %.2f < wanted delta start %.2f",
-							gotDiff.Delta, wantDiff.Delta.start,
+							gotDiff.Delta, wantDiff.delta.start,
 						)
 					}
-					if gotDiff.Delta > wantDiff.Delta.end {
+					if gotDiff.Delta > wantDiff.delta.end {
 						t.Fatalf(
 							"got delta %.2f > wanted delta end %.2f",
-							gotDiff.Delta, wantDiff.Delta.end,
+							gotDiff.Delta, wantDiff.delta.end,
 						)
 					}
 				}
