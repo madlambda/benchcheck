@@ -481,7 +481,7 @@ func assertEqualWithFloat(t *testing.T, got, want interface{}) {
 	t.Helper()
 
 	cmpfloats := cmp.Comparer(func(x, y float64) bool {
-		const ε = 0.01
+		const ε = 0.1
 		return math.Abs(x-y) < ε && math.Abs(y-x) < ε
 	})
 
