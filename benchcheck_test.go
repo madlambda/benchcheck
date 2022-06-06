@@ -430,6 +430,23 @@ func TestStatModule(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:   "stat benchcheck same version",
+			module: "github.com/madlambda/benchcheck",
+			oldver: "e90da7b50cf0e191004809e415c64319465286d7",
+			newver: "e90da7b50cf0e191004809e415c64319465286d7",
+			want: []result{
+				{
+					metric: "time/op",
+					diffs: []diff{
+						{
+							name:  "Fake",
+							delta: rangef{start: -1, end: 1},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tcases {
