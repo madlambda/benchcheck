@@ -368,13 +368,13 @@ func TestStatBenchmarkResults(t *testing.T) {
 }
 
 func TestStatModule(t *testing.T) {
-	type delta struct {
+	type rangef struct {
 		start float64
 		end   float64
 	}
 	type diff struct {
 		name  string
-		delta delta
+		delta rangef
 	}
 	type result struct {
 		metric string
@@ -407,7 +407,7 @@ func TestStatModule(t *testing.T) {
 					diffs: []diff{
 						{
 							name:  "Fake",
-							delta: delta{start: -80, end: -70},
+							delta: rangef{start: -80, end: -70},
 						},
 					},
 				},
@@ -424,7 +424,7 @@ func TestStatModule(t *testing.T) {
 					diffs: []diff{
 						{
 							name:  "Fake",
-							delta: delta{start: 250, end: 400},
+							delta: rangef{start: 250, end: 400},
 						},
 					},
 				},
