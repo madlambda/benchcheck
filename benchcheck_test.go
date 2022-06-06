@@ -15,8 +15,6 @@ import (
 )
 
 func TestGetModule(t *testing.T) {
-	t.Parallel()
-
 	type ModuleInfo struct {
 		Name    string
 		Version string
@@ -85,8 +83,6 @@ func TestGetModule(t *testing.T) {
 	for _, tc := range tests {
 		test := tc
 		t.Run(test.desc, func(t *testing.T) {
-			t.Parallel()
-
 			mod, err := benchcheck.GetModule(test.moduleName, test.moduleVersion)
 
 			if test.wantErr {
@@ -129,8 +125,6 @@ func TestGetModule(t *testing.T) {
 }
 
 func TestBenchModule(t *testing.T) {
-	t.Parallel()
-
 	const (
 		module     = "github.com/madlambda/benchcheck"
 		modversion = "73348d58a038746fd4f92dd1e77344a58a4f8505"
@@ -151,8 +145,6 @@ func TestBenchModule(t *testing.T) {
 }
 
 func TestBenchModuleNoBenchmarks(t *testing.T) {
-	t.Parallel()
-
 	const (
 		module     = "github.com/madlambda/benchcheck"
 		modversion = "f15923bf230cc7331ad869fcdaac35172f8b7f38"
@@ -173,8 +165,6 @@ func TestStatBenchmarkResults(t *testing.T) {
 		newres []string
 		want   []benchcheck.StatResult
 	}
-
-	t.Parallel()
 
 	tcases := []testcase{
 		{
@@ -357,8 +347,6 @@ func TestStatBenchmarkResults(t *testing.T) {
 		tcase := tc
 
 		t.Run(tcase.name, func(t *testing.T) {
-			t.Parallel()
-
 			got, err := benchcheck.Stat(tcase.oldres, tcase.newres)
 			assertNoError(t, err)
 
