@@ -362,18 +362,26 @@ func TestStatBenchmarkResults(t *testing.T) {
 			got, err := benchcheck.Stat(tcase.oldres, tcase.newres)
 			assertNoError(t, err)
 
-			assertEqualStatResults(t, got, tcase.want)
+			assertEqualWithFloat(t, got, tcase.want)
 		})
 	}
 }
 
 func TestStatModule(t *testing.T) {
+	type diff struct {
+		Name  string
+		Delta float64
+	}
+	type result struct {
+		Metric string
+		Diffs  []diff
+	}
 	type testcase struct {
 		name   string
 		module string
 		oldver string
 		newver string
-		want   []benchcheck.StatResult
+		want   []result
 	}
 
 	t.Parallel()
@@ -389,14 +397,12 @@ func TestStatModule(t *testing.T) {
 			module: "github.com/madlambda/benchcheck",
 			oldver: "0f9165271a00b54163d3fc4c73d52a13c3747a75",
 			newver: "e90da7b50cf0e191004809e415c64319465286d7",
-			want: []benchcheck.StatResult{
+			want: []result{
 				{
 					Metric: "time/op",
-					BenchDiffs: []benchcheck.BenchDiff{
+					Diffs: []diff{
 						{
 							Name:  "Fake",
-							Old:   "501ms ± 0%",
-							New:   "100ms ± 0%",
 							Delta: -79.97,
 						},
 					},
@@ -411,21 +417,32 @@ func TestStatModule(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
+			gotRes, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
 			assertNoError(t, err)
 
-			stripProcCountFromStatResults(got)
-			assertEqualStatResults(t, got, tcase.want)
-		})
-	}
-}
+			// We can't check everything on the result since variance
+			// is introduced by changes on the environment.
+			// We can ensure the overall delta + function names.
+			got := make([]result, len(gotRes))
 
-func stripProcCountFromStatResults(res []benchcheck.StatResult) {
-	for _, r := range res {
-		for i := range r.BenchDiffs {
-			diff := &r.BenchDiffs[i]
-			diff.Name = stripProcCountFromBenchName(diff.Name)
-		}
+			for i, r := range gotRes {
+				diffs := make([]diff, len(r.BenchDiffs))
+
+				for j, v := range r.BenchDiffs {
+					diffs[j] = diff{
+						Name:  stripProcCountFromBenchName(v.Name),
+						Delta: v.Delta,
+					}
+				}
+
+				got[i] = result{
+					Metric: r.Metric,
+					Diffs:  diffs,
+				}
+			}
+
+			assertEqualWithFloat(t, got, tcase.want)
+		})
 	}
 }
 
@@ -460,7 +477,7 @@ func assertNoError(t *testing.T, err error, details ...interface{}) {
 	t.Fatal(msg)
 }
 
-func assertEqualStatResults(t *testing.T, got, want []benchcheck.StatResult) {
+func assertEqualWithFloat(t *testing.T, got, want interface{}) {
 	t.Helper()
 
 	cmpfloats := cmp.Comparer(func(x, y float64) bool {
