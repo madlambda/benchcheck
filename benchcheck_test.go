@@ -388,8 +388,6 @@ func TestStatModule(t *testing.T) {
 		want   []result
 	}
 
-	t.Parallel()
-
 	if testing.Short() {
 		t.Skip("Skipping in short mode")
 		return
@@ -453,8 +451,6 @@ func TestStatModule(t *testing.T) {
 		tcase := tc
 
 		t.Run(tcase.name, func(t *testing.T) {
-			t.Parallel()
-
 			got, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
 			assertNoError(t, err)
 
