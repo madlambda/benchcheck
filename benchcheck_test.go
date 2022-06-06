@@ -441,7 +441,7 @@ func TestStatModule(t *testing.T) {
 					diffs: []diff{
 						{
 							name:  "Fake",
-							delta: rangef{start: -5, end: 5},
+							delta: rangef{start: -10, end: 10},
 						},
 					},
 				},
