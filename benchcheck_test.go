@@ -368,9 +368,13 @@ func TestStatBenchmarkResults(t *testing.T) {
 }
 
 func TestStatModule(t *testing.T) {
+	type delta struct {
+		start float64
+		end   float64
+	}
 	type diff struct {
 		Name  string
-		Delta float64
+		Delta delta
 	}
 	type result struct {
 		Metric string
@@ -403,7 +407,24 @@ func TestStatModule(t *testing.T) {
 					Diffs: []diff{
 						{
 							Name:  "Fake",
-							Delta: -79.97,
+							Delta: delta{start: -80, end: -70},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:   "stat benchcheck reversed versions",
+			module: "github.com/madlambda/benchcheck",
+			oldver: "e90da7b50cf0e191004809e415c64319465286d7",
+			newver: "0f9165271a00b54163d3fc4c73d52a13c3747a75",
+			want: []result{
+				{
+					Metric: "time/op",
+					Diffs: []diff{
+						{
+							Name:  "Fake",
+							Delta: delta{start: 390, end: 400},
 						},
 					},
 				},
@@ -417,31 +438,41 @@ func TestStatModule(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			gotRes, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
+			got, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
 			assertNoError(t, err)
 
 			// We can't check everything on the result since variance
-			// is introduced by changes on the environment.
-			// We can ensure the overall delta + function names.
-			got := make([]result, len(gotRes))
+			// is introduced by changes on the environment (this is an e2e test).
+			// We can ensure results inside a reasonably broad delta + function names.
 
-			for i, r := range gotRes {
-				diffs := make([]diff, len(r.BenchDiffs))
+			assert.EqualInts(t, len(tcase.want), len(got), "want %v != got %v", tcase, tcase.want, got)
 
-				for j, v := range r.BenchDiffs {
-					diffs[j] = diff{
-						Name:  stripProcCountFromBenchName(v.Name),
-						Delta: v.Delta,
+			for i, gotRes := range got {
+				wantRes := tcase.want[i]
+
+				t.Logf("got bench result: %v", gotRes)
+
+				assert.EqualStrings(t, wantRes.Metric, gotRes.Metric)
+
+				for j, gotDiff := range gotRes.BenchDiffs {
+					wantDiff := wantRes.Diffs[j]
+					gotName := stripProcCountFromBenchName(gotDiff.Name)
+					assert.EqualStrings(t, wantDiff.Name, gotName)
+
+					if gotDiff.Delta < wantDiff.Delta.start {
+						t.Fatalf(
+							"got delta %.2f < wanted delta start %.2f",
+							gotDiff.Delta, wantDiff.Delta.start,
+						)
+					}
+					if gotDiff.Delta > wantDiff.Delta.end {
+						t.Fatalf(
+							"got delta %.2f > wanted delta end %.2f",
+							gotDiff.Delta, wantDiff.Delta.end,
+						)
 					}
 				}
-
-				got[i] = result{
-					Metric: r.Metric,
-					Diffs:  diffs,
-				}
 			}
-
-			assertEqualWithFloat(t, got, tcase.want)
 		})
 	}
 }
@@ -481,7 +512,7 @@ func assertEqualWithFloat(t *testing.T, got, want interface{}) {
 	t.Helper()
 
 	cmpfloats := cmp.Comparer(func(x, y float64) bool {
-		const ε = 0.1
+		const ε = 0.01
 		return math.Abs(x-y) < ε && math.Abs(y-x) < ε
 	})
 
