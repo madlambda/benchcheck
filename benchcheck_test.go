@@ -393,6 +393,8 @@ func TestStatModule(t *testing.T) {
 		return
 	}
 
+	t.Parallel()
+
 	tcases := []testcase{
 		{
 			name:   "stat benchcheck",
@@ -439,7 +441,7 @@ func TestStatModule(t *testing.T) {
 					diffs: []diff{
 						{
 							name:  "Fake",
-							delta: rangef{start: -1, end: 1},
+							delta: rangef{start: -5, end: 5},
 						},
 					},
 				},
@@ -451,6 +453,8 @@ func TestStatModule(t *testing.T) {
 		tcase := tc
 
 		t.Run(tcase.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
 			assertNoError(t, err)
 
