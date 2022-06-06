@@ -19,7 +19,7 @@ lint:
 
 .PHONY: test
 test:
-	go test -timeout 60s -race ./...
+	go test -timeout 120s -race ./...
 
 .PHONY: coverage
 coverage: 

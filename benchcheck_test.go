@@ -378,13 +378,30 @@ func TestStatModule(t *testing.T) {
 
 	t.Parallel()
 
+	if testing.Short() {
+		t.Skip("Skipping in short mode")
+		return
+	}
+
 	tcases := []testcase{
 		{
 			name:   "stat benchcheck",
 			module: "github.com/madlambda/benchcheck",
 			oldver: "0f9165271a00b54163d3fc4c73d52a13c3747a75",
 			newver: "e90da7b50cf0e191004809e415c64319465286d7",
-			want:   []benchcheck.StatResult{},
+			want: []benchcheck.StatResult{
+				{
+					Metric: "time/op",
+					BenchDiffs: []benchcheck.BenchDiff{
+						{
+							Name:  "Fake",
+							Old:   "501ms ± 0%",
+							New:   "100ms ± 0%",
+							Delta: -79.97,
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -396,9 +413,28 @@ func TestStatModule(t *testing.T) {
 
 			got, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
 			assertNoError(t, err)
+
+			stripProcCountFromStatResults(got)
 			assertEqualStatResults(t, got, tcase.want)
 		})
 	}
+}
+
+func stripProcCountFromStatResults(res []benchcheck.StatResult) {
+	for _, r := range res {
+		for i := range r.BenchDiffs {
+			diff := &r.BenchDiffs[i]
+			diff.Name = stripProcCountFromBenchName(diff.Name)
+		}
+	}
+}
+
+func stripProcCountFromBenchName(name string) string {
+	// Benchmark names depend on count of CPUs:
+	// https://cs.opensource.google/go/go/+/refs/tags/go1.18.3:src/testing/benchmark.go;drc=47f806ce81aac555946144f112b9f8733e2ed871;l=495
+	// Here we remove this info so it is easier to test things independent of env.
+	lastIndex := strings.LastIndex(name, "-")
+	return name[:lastIndex]
 }
 
 func assertNoError(t *testing.T, err error, details ...interface{}) {

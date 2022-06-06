@@ -182,7 +182,17 @@ func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 // Any errors running "go" can be inspected in detail by
 // checking if the returned error is a CmdError.
 func StatModule(name string, oldversion, newversion string) ([]StatResult, error) {
-	return []StatResult{}, nil
+	oldresults, err := benchModule(name, oldversion)
+	if err != nil {
+		return nil, fmt.Errorf("running bench for old module: %v", err)
+	}
+
+	newresults, err := benchModule(name, newversion)
+	if err != nil {
+		return nil, fmt.Errorf("running bench for new module: %v", err)
+	}
+
+	return Stat(oldresults, newresults)
 }
 
 func newStatResults(tables []*benchstat.Table) []StatResult {
@@ -221,4 +231,26 @@ func newBenchResults(rows []*benchstat.Row) []BenchDiff {
 
 func resultsReader(res BenchResults) io.Reader {
 	return strings.NewReader(strings.Join(res, "\n"))
+}
+
+func benchModule(name string, version string) (BenchResults, error) {
+	mod, err := GetModule(name, version)
+	if err != nil {
+		return nil, err
+	}
+	// benchstat requires multiple runs of the same benchmarks
+	// so it can assess statistically for abnormalities, etc.
+	const benchruns = 5
+
+	results := BenchResults{}
+
+	for i := 0; i < benchruns; i++ {
+		res, err := RunBench(mod)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, res...)
+	}
+
+	return results, nil
 }
