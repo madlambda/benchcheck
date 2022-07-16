@@ -19,11 +19,15 @@ lint:
 
 .PHONY: test
 test:
-	go test -timeout 60s -race ./...
+	go test -race ./...
+
+.PHONY: test/integration
+test/integration:
+	go test -race -tags integration -count=1 ./...
 
 .PHONY: coverage
 coverage: 
-	go test -covermode=atomic -coverprofile=$(COVERAGE_REPORT) ./...
+	go test -race -covermode=atomic -coverprofile=$(COVERAGE_REPORT) -tags integration ./...
 
 .PHONY: coverage/show
 coverage/show: coverage

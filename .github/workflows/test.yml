@@ -2,7 +2,7 @@ name: CI
 on: [push]
 jobs:
 
-  build:
+  test:
     name: Build and Test
 
     runs-on: ${{ matrix.os }}
@@ -29,3 +29,31 @@ jobs:
 
     - name: Test
       run: make test
+
+  test-integration:
+    # On GHA envs like windows/mac this tests are very unreliable
+    # but they work well on linux runners. Real benchmarks need
+    # environments with little noise to give accurate results and
+    # these are full integration tests.
+    name: Integration Test
+
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.16", "1.17", "1.18"]
+
+    steps:
+
+    - name: Set up Go ${{ matrix.go }}
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go }}
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Test
+      run: make test/integration
