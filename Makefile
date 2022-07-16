@@ -23,7 +23,7 @@ test:
 
 .PHONY: test/integration
 test/integration:
-	go test -race -tags integration ./...
+	go test -race -tags integration -count=1 ./...
 
 .PHONY: coverage
 coverage: 
