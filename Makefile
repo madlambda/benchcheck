@@ -21,6 +21,10 @@ lint:
 test:
 	go test -race ./...
 
+.PHONY: test/integration
+test/integration:
+	go test -race -tags integration ./...
+
 .PHONY: coverage
 coverage: 
 	go test -covermode=atomic -coverprofile=$(COVERAGE_REPORT) ./...
