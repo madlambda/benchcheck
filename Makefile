@@ -27,7 +27,7 @@ test/integration:
 
 .PHONY: coverage
 coverage: 
-	go test -covermode=atomic -coverprofile=$(COVERAGE_REPORT) ./...
+	go test -race -covermode=atomic -coverprofile=$(COVERAGE_REPORT) -tags integration ./...
 
 .PHONY: coverage/show
 coverage/show: coverage
