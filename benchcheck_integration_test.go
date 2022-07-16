@@ -12,13 +12,13 @@ import (
 )
 
 func TestStatModule(t *testing.T) {
-	type rangef struct {
+	type delta struct {
 		start float64
 		end   float64
 	}
 	type diff struct {
 		name  string
-		delta rangef
+		delta delta
 	}
 	type result struct {
 		metric string
@@ -51,7 +51,7 @@ func TestStatModule(t *testing.T) {
 					diffs: []diff{
 						{
 							name:  "Fake",
-							delta: rangef{start: -80, end: -60},
+							delta: delta{start: -85, end: -75},
 						},
 					},
 				},
@@ -68,7 +68,7 @@ func TestStatModule(t *testing.T) {
 					diffs: []diff{
 						{
 							name:  "Fake",
-							delta: rangef{start: 100, end: 400},
+							delta: delta{start: 395, end: 405},
 						},
 					},
 				},
@@ -85,7 +85,7 @@ func TestStatModule(t *testing.T) {
 					diffs: []diff{
 						{
 							name:  "Fake",
-							delta: rangef{start: -10, end: 10},
+							delta: delta{start: -1, end: 1},
 						},
 					},
 				},
