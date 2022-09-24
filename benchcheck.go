@@ -43,6 +43,10 @@ type BenchDiff struct {
 	Delta float64
 }
 
+// Check represents a check to be performed on a StatResult
+type Check struct {
+}
+
 // CmdError represents an error running a specific command.
 type CmdError struct {
 	Cmd    *exec.Cmd
@@ -58,6 +62,10 @@ func (c *CmdError) Error() string {
 		c.Cmd.Dir,
 		c.Err,
 	)
+}
+
+func (c Check) String() string {
+	return "TODO"
 }
 
 // Path is the absolute path of the module on the filesystem.
@@ -94,7 +102,7 @@ func (b *BenchResults) Add(res string) {
 // The returned path is an absolute path.
 //
 // Any errors running "go" can be inspected in detail by
-// checking if the returned error is a CmdError.
+// checking if the returned error is a *CmdError.
 func GetModule(name string, version string) (Module, error) {
 	// Reference: https://golang.org/ref/mod#go-mod-download
 	cmd := exec.Command("go", "mod", "download", "-json", fmt.Sprintf("%s@%s", name, version))
@@ -125,7 +133,7 @@ func GetModule(name string, version string) (Module, error) {
 // This function relies on running the "go" command to run benchmarks.
 //
 // Any errors running "go" can be inspected in detail by
-// checking if the returned is a CmdError.
+// checking if the returned is a *CmdError.
 func RunBench(mod Module) (BenchResults, error) {
 	cmd := exec.Command("go", "test", "-bench=.", "./...")
 	cmd.Dir = mod.Path()
@@ -146,10 +154,7 @@ func RunBench(mod Module) (BenchResults, error) {
 	return results, nil
 }
 
-// Stat compares two benchmark results providing a set of results.
-// oldres and newres must be multiple strings where each line is a
-// benchmark result following Go's benchmark output format.
-// Line eg: "BenchmarkName  	 50	  31735022 ns/op	  61.15 MB/s"
+// Stat compares two benchmark results providing a set of stats results.
 func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 	// We are using benchstat defaults:
 	//	- https://cs.opensource.google/go/x/perf/+/master:cmd/benchstat/main.go;l=117
@@ -193,6 +198,11 @@ func StatModule(name string, oldversion, newversion string) ([]StatResult, error
 	}
 
 	return Stat(oldresults, newresults)
+}
+
+// ParseCheck will parse the given string into a Check.
+func ParseCheck(val string) (Check, error) {
+	return Check{}, nil
 }
 
 func newStatResults(tables []*benchstat.Table) []StatResult {
