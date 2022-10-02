@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"runtime/debug"
 	"strings"
 
 	"github.com/madlambda/benchcheck"
@@ -70,18 +69,4 @@ func main() {
 			fmt.Println(diff)
 		}
 	}
-}
-
-func showVersion() {
-	info, ok := debug.ReadBuildInfo()
-	if ok {
-		for _, setting := range info.Settings {
-			if setting.Key == "vcs.revision" {
-				fmt.Printf("go version: %s\n", info.GoVersion)
-				fmt.Printf("benchcheck version: %s\n", setting.Value)
-				return
-			}
-		}
-	}
-	fmt.Println("version: no version info")
 }
