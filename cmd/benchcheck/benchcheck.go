@@ -9,7 +9,7 @@ import (
 	"github.com/madlambda/benchcheck"
 )
 
-type checkList []benchcheck.Check
+type checkList []benchcheck.Checker
 
 func (c *checkList) String() string {
 	if c == nil {
@@ -23,8 +23,7 @@ func (c *checkList) String() string {
 }
 
 func (c *checkList) Set(val string) error {
-	// TODO: check the val here
-	check, err := benchcheck.ParseCheck(val)
+	check, err := benchcheck.ParseChecker(val)
 	if err != nil {
 		return err
 	}
@@ -39,7 +38,7 @@ func main() {
 	newRev := flag.String("new", "", "the new revision to compare")
 
 	checks := checkList{}
-	flag.Var(&checks, "check", "check to be performed on fmt <metric>=(+|-)<number>%. Eg: time/op=10%")
+	flag.Var(&checks, "check", "check to be performed, defined in the form: <metric>=(+|-)<number>%. Eg: time/op=10%")
 
 	flag.Parse()
 

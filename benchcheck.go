@@ -43,8 +43,8 @@ type BenchDiff struct {
 	Delta float64
 }
 
-// Check represents a check to be performed on a StatResult
-type Check struct {
+// Checker performs checks on StatResult.
+type Checker struct {
 }
 
 // CmdError represents an error running a specific command.
@@ -64,8 +64,15 @@ func (c *CmdError) Error() string {
 	)
 }
 
-func (c Check) String() string {
+// String returns the string representation of the checker.
+func (c Checker) String() string {
 	return "TODO"
+}
+
+// Do performs the check on the given StatResult. Returns true
+// if it passed the check, false otherwise.
+func (c Checker) Do(stat StatResult) bool {
+	return false
 }
 
 // Path is the absolute path of the module on the filesystem.
@@ -200,9 +207,9 @@ func StatModule(name string, oldversion, newversion string) ([]StatResult, error
 	return Stat(oldresults, newresults)
 }
 
-// ParseCheck will parse the given string into a Check.
-func ParseCheck(val string) (Check, error) {
-	return Check{}, nil
+// ParseChecker will parse the given string into a Check.
+func ParseChecker(val string) (Checker, error) {
+	return Checker{}, nil
 }
 
 func newStatResults(tables []*benchstat.Table) []StatResult {

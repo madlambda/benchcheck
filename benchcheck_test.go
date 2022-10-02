@@ -128,6 +128,159 @@ func TestGetModule(t *testing.T) {
 	}
 }
 
+func TestChecker(t *testing.T) {
+	t.Parallel()
+	t.Skip("TODO")
+
+	type testcase struct {
+		name     string
+		check    string
+		stat     benchcheck.StatResult
+		want     bool
+		parseErr bool
+	}
+
+	tcases := []testcase{
+		{
+			name:     "parse fails on missing value",
+			check:    "metric=",
+			parseErr: true,
+		},
+		{
+			name:     "parse fails on value is NaN",
+			check:    "metric=notnumber",
+			parseErr: true,
+		},
+		{
+			name:     "parse fails on empty check",
+			check:    "",
+			parseErr: true,
+		},
+		{
+			name:  "stat check pass on unknown metric",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "other",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 50.0}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on positive",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 19.9}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on positive exact match",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.0}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on positive if epsilon < 0.1",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.09}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check fails on positive if epsilon >= 0.1",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.1}},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check fails on positive if any of the diffs fails",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric: "metric",
+				BenchDiffs: []benchcheck.BenchDiff{
+					{Delta: 1.0},
+					{Delta: 2.0},
+					{Delta: 21.0},
+				},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check pass on negative",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -19.9}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on negative exact match",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.0}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on negative if epsilon < 0.1",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.09}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check fails on negative if epsilon >= 0.1",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.1}},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check fails on negative if any of the diffs fails",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric: "metric",
+				BenchDiffs: []benchcheck.BenchDiff{
+					{Delta: 1.0},
+					{Delta: -21.0},
+					{Delta: 2.0},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, tcase := range tcases {
+		t.Run(tcase.name, func(t *testing.T) {
+			check, err := benchcheck.ParseChecker(tcase.check)
+			if tcase.parseErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+			got := check.Do(tcase.stat)
+			if got != tcase.want {
+				t.Fatalf("check.Do(%s)=%t; want %t", tcase.stat, got, tcase.want)
+			}
+		})
+	}
+}
+
 func TestBenchModule(t *testing.T) {
 	t.Parallel()
 
