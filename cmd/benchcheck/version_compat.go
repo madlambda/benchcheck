@@ -1,4 +1,5 @@
 //go:build !go.1.18
+// +build !go.1.18
 
 package main
 
