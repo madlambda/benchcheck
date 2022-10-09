@@ -165,6 +165,15 @@ func TestChecker(t *testing.T) {
 			want: true,
 		},
 		{
+			name:  "stat check pass on zero",
+			check: "metric=0%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 0.0}},
+			},
+			want: true,
+		},
+		{
 			name:  "stat check pass on positive",
 			check: "metric=+20%",
 			stat: benchcheck.StatResult{
@@ -273,8 +282,11 @@ func TestChecker(t *testing.T) {
 		},
 	}
 
-	for _, tcase := range tcases {
+	for _, tc := range tcases {
+		tcase := tc
 		t.Run(tcase.name, func(t *testing.T) {
+			t.Parallel()
+
 			check, err := benchcheck.ParseChecker(tcase.check)
 			if tcase.parseErr {
 				assert.Error(t, err)

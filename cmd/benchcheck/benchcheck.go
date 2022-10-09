@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/madlambda/benchcheck"
@@ -49,6 +51,11 @@ func main() {
 		return
 	}
 
+	if len(os.Args) <= 1 {
+		flag.Usage()
+		return
+	}
+
 	if *mod == "" {
 		log.Fatal("-mod is obligatory")
 	}
@@ -61,13 +68,25 @@ func main() {
 
 	results, err := benchcheck.StatModule(*mod, *oldRev, *newRev)
 	if err != nil {
-		log.Fatal(err)
+		var cmderr *benchcheck.CmdError
+		if errors.As(err, &cmderr) {
+			fmt.Fprintf(os.Stderr, "failed to run: %s", cmderr.Cmd)
+			fmt.Fprintf(os.Stderr, "error: %s", cmderr.Err)
+			fmt.Fprintf(os.Stderr, "cmd output: %s", cmderr.Output)
+		} else {
+			log.Fatal(err)
+		}
 	}
 
 	for _, result := range results {
 		fmt.Printf("metric: %s\n", result.Metric)
 		for _, diff := range result.BenchDiffs {
 			fmt.Println(diff)
+		}
+		for _, check := range checks {
+			if !check.Do(result) {
+				fmt.Printf("check failed: %s", check)
+			}
 		}
 	}
 }
