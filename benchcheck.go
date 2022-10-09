@@ -79,7 +79,19 @@ func (c Checker) String() string {
 // Do performs the check on the given StatResult. Returns true
 // if it passed the check, false otherwise.
 func (c Checker) Do(stat StatResult) bool {
-	return false
+	if c.metric != stat.Metric {
+		return true
+	}
+
+	for _, bench := range stat.BenchDiffs {
+		if c.threshold >= 0.0 && bench.Delta > c.threshold {
+			return false
+		}
+		if c.threshold < 0.0 && bench.Delta < c.threshold {
+			return false
+		}
+	}
+	return true
 }
 
 // Path is the absolute path of the module on the filesystem.

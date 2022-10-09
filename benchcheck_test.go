@@ -278,9 +278,10 @@ func TestChecker(t *testing.T) {
 			check, err := benchcheck.ParseChecker(tcase.check)
 			if tcase.parseErr {
 				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				return
 			}
+
+			assert.NoError(t, err)
 			got := check.Do(tcase.stat)
 			if got != tcase.want {
 				t.Fatalf("check.Do(%s)=%t; want %t", tcase.stat, got, tcase.want)
