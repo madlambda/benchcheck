@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"golang.org/x/perf/benchstat"
 )
+
+// CheckerFmt represents the expected string format of a checker.
+const CheckerFmt = "<metric>=(+|-)<number>%"
 
 // Module represents a Go module.
 type Module struct {
@@ -45,6 +49,9 @@ type BenchDiff struct {
 
 // Checker performs checks on StatResult.
 type Checker struct {
+	metric    string
+	threshold float64
+	repr      string
 }
 
 // CmdError represents an error running a specific command.
@@ -66,7 +73,7 @@ func (c *CmdError) Error() string {
 
 // String returns the string representation of the checker.
 func (c Checker) String() string {
-	return "TODO"
+	return c.repr
 }
 
 // Do performs the check on the given StatResult. Returns true
@@ -209,7 +216,20 @@ func StatModule(name string, oldversion, newversion string) ([]StatResult, error
 
 // ParseChecker will parse the given string into a Check.
 func ParseChecker(val string) (Checker, error) {
-	return Checker{}, nil
+	parsed := strings.Split(val, "=")
+	metric := parsed[0]
+	if len(parsed) != 2 {
+		return Checker{}, fmt.Errorf("checker on wrong format, expect: %q", CheckerFmt)
+	}
+	threshold, err := strconv.ParseFloat(strings.TrimSuffix(parsed[1], "%"), 64)
+	if err != nil {
+		return Checker{}, fmt.Errorf("parsing checker %q threshold", err)
+	}
+	return Checker{
+		repr:      val,
+		metric:    metric,
+		threshold: threshold,
+	}, nil
 }
 
 func newStatResults(tables []*benchstat.Table) []StatResult {

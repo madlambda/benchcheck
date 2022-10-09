@@ -38,7 +38,9 @@ func main() {
 	newRev := flag.String("new", "", "the new revision to compare")
 
 	checks := checkList{}
-	flag.Var(&checks, "check", "check to be performed, defined in the form: <metric>=(+|-)<number>%. Eg: time/op=10%")
+	flag.Var(&checks, "check", fmt.Sprintf(
+		"check to be performed, defined in the form: %s. Eg: time/op=10%%",
+		benchcheck.CheckerFmt))
 
 	flag.Parse()
 

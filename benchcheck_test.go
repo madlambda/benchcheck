@@ -130,7 +130,6 @@ func TestGetModule(t *testing.T) {
 
 func TestChecker(t *testing.T) {
 	t.Parallel()
-	t.Skip("TODO")
 
 	type testcase struct {
 		name     string
@@ -184,17 +183,26 @@ func TestChecker(t *testing.T) {
 			want: true,
 		},
 		{
-			name:  "stat check pass on positive if epsilon < 0.1",
+			name:  "stat check fails on positive",
 			check: "metric=+20%",
 			stat: benchcheck.StatResult{
 				Metric:     "metric",
-				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.09}},
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.1}},
 			},
-			want: true,
+			want: false,
 		},
 		{
-			name:  "stat check fails on positive if epsilon >= 0.1",
-			check: "metric=+20%",
+			name:  "stat check fails on positive with no sign",
+			check: "metric=20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.1}},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check fails on positive with no sign and no percent",
+			check: "metric=20",
 			stat: benchcheck.StatResult{
 				Metric:     "metric",
 				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.1}},
@@ -233,17 +241,17 @@ func TestChecker(t *testing.T) {
 			want: true,
 		},
 		{
-			name:  "stat check pass on negative if epsilon < 0.1",
+			name:  "stat check fails on negative",
 			check: "metric=-20%",
 			stat: benchcheck.StatResult{
 				Metric:     "metric",
-				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.09}},
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.1}},
 			},
-			want: true,
+			want: false,
 		},
 		{
-			name:  "stat check fails on negative if epsilon >= 0.1",
-			check: "metric=-20%",
+			name:  "stat check fails on negative no percent",
+			check: "metric=-20",
 			stat: benchcheck.StatResult{
 				Metric:     "metric",
 				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.1}},
