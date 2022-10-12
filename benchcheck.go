@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"golang.org/x/perf/benchstat"
 )
+
+// CheckerFmt represents the expected string format of a checker.
+const CheckerFmt = "<metric>=(+|-)<number>%"
 
 // Module represents a Go module.
 type Module struct {
@@ -43,6 +47,13 @@ type BenchDiff struct {
 	Delta float64
 }
 
+// Checker performs checks on StatResult.
+type Checker struct {
+	metric    string
+	threshold float64
+	repr      string
+}
+
 // CmdError represents an error running a specific command.
 type CmdError struct {
 	Cmd    *exec.Cmd
@@ -58,6 +69,29 @@ func (c *CmdError) Error() string {
 		c.Cmd.Dir,
 		c.Err,
 	)
+}
+
+// String returns the string representation of the checker.
+func (c Checker) String() string {
+	return c.repr
+}
+
+// Do performs the check on the given StatResult. Returns true
+// if it passed the check, false otherwise.
+func (c Checker) Do(stat StatResult) bool {
+	if c.metric != stat.Metric {
+		return true
+	}
+
+	for _, bench := range stat.BenchDiffs {
+		if c.threshold >= 0.0 && bench.Delta > c.threshold {
+			return false
+		}
+		if c.threshold < 0.0 && bench.Delta < c.threshold {
+			return false
+		}
+	}
+	return true
 }
 
 // Path is the absolute path of the module on the filesystem.
@@ -94,7 +128,7 @@ func (b *BenchResults) Add(res string) {
 // The returned path is an absolute path.
 //
 // Any errors running "go" can be inspected in detail by
-// checking if the returned error is a CmdError.
+// checking if the returned error is a *CmdError.
 func GetModule(name string, version string) (Module, error) {
 	// Reference: https://golang.org/ref/mod#go-mod-download
 	cmd := exec.Command("go", "mod", "download", "-json", fmt.Sprintf("%s@%s", name, version))
@@ -125,7 +159,7 @@ func GetModule(name string, version string) (Module, error) {
 // This function relies on running the "go" command to run benchmarks.
 //
 // Any errors running "go" can be inspected in detail by
-// checking if the returned is a CmdError.
+// checking if the returned is a *CmdError.
 func RunBench(mod Module) (BenchResults, error) {
 	cmd := exec.Command("go", "test", "-bench=.", "./...")
 	cmd.Dir = mod.Path()
@@ -146,10 +180,7 @@ func RunBench(mod Module) (BenchResults, error) {
 	return results, nil
 }
 
-// Stat compares two benchmark results providing a set of results.
-// oldres and newres must be multiple strings where each line is a
-// benchmark result following Go's benchmark output format.
-// Line eg: "BenchmarkName  	 50	  31735022 ns/op	  61.15 MB/s"
+// Stat compares two benchmark results providing a set of stats results.
 func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 	// We are using benchstat defaults:
 	//	- https://cs.opensource.google/go/x/perf/+/master:cmd/benchstat/main.go;l=117
@@ -193,6 +224,24 @@ func StatModule(name string, oldversion, newversion string) ([]StatResult, error
 	}
 
 	return Stat(oldresults, newresults)
+}
+
+// ParseChecker will parse the given string into a Check.
+func ParseChecker(val string) (Checker, error) {
+	parsed := strings.Split(val, "=")
+	metric := parsed[0]
+	if len(parsed) != 2 {
+		return Checker{}, fmt.Errorf("checker on wrong format, expect: %q", CheckerFmt)
+	}
+	threshold, err := strconv.ParseFloat(strings.TrimSuffix(parsed[1], "%"), 64)
+	if err != nil {
+		return Checker{}, fmt.Errorf("parsing checker %q threshold", err)
+	}
+	return Checker{
+		repr:      val,
+		metric:    metric,
+		threshold: threshold,
+	}, nil
 }
 
 func newStatResults(tables []*benchstat.Table) []StatResult {

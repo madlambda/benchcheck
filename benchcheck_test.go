@@ -128,6 +128,180 @@ func TestGetModule(t *testing.T) {
 	}
 }
 
+func TestChecker(t *testing.T) {
+	t.Parallel()
+
+	type testcase struct {
+		name     string
+		check    string
+		stat     benchcheck.StatResult
+		want     bool
+		parseErr bool
+	}
+
+	tcases := []testcase{
+		{
+			name:     "parse fails on missing value",
+			check:    "metric=",
+			parseErr: true,
+		},
+		{
+			name:     "parse fails on value is NaN",
+			check:    "metric=notnumber",
+			parseErr: true,
+		},
+		{
+			name:     "parse fails on empty check",
+			check:    "",
+			parseErr: true,
+		},
+		{
+			name:  "stat check pass on unknown metric",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "other",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 50.0}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on zero",
+			check: "metric=0%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 0.0}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on positive",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 19.9}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on positive exact match",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.0}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check fails on positive",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.1}},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check fails on positive with no sign",
+			check: "metric=20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.1}},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check fails on positive with no sign and no percent",
+			check: "metric=20",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: 20.1}},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check fails on positive if any of the diffs fails",
+			check: "metric=+20%",
+			stat: benchcheck.StatResult{
+				Metric: "metric",
+				BenchDiffs: []benchcheck.BenchDiff{
+					{Delta: 1.0},
+					{Delta: 2.0},
+					{Delta: 21.0},
+				},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check pass on negative",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -19.9}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check pass on negative exact match",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.0}},
+			},
+			want: true,
+		},
+		{
+			name:  "stat check fails on negative",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.1}},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check fails on negative no percent",
+			check: "metric=-20",
+			stat: benchcheck.StatResult{
+				Metric:     "metric",
+				BenchDiffs: []benchcheck.BenchDiff{{Delta: -20.1}},
+			},
+			want: false,
+		},
+		{
+			name:  "stat check fails on negative if any of the diffs fails",
+			check: "metric=-20%",
+			stat: benchcheck.StatResult{
+				Metric: "metric",
+				BenchDiffs: []benchcheck.BenchDiff{
+					{Delta: 1.0},
+					{Delta: -21.0},
+					{Delta: 2.0},
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, tc := range tcases {
+		tcase := tc
+		t.Run(tcase.name, func(t *testing.T) {
+			t.Parallel()
+
+			check, err := benchcheck.ParseChecker(tcase.check)
+			if tcase.parseErr {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			got := check.Do(tcase.stat)
+			if got != tcase.want {
+				t.Fatalf("check.Do(%s)=%t; want %t", tcase.stat, got, tcase.want)
+			}
+		})
+	}
+}
+
 func TestBenchModule(t *testing.T) {
 	t.Parallel()
 
