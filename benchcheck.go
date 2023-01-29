@@ -164,6 +164,8 @@ func RunBench(mod Module, dir string, count int) (BenchResults, error) {
 	cmd := exec.Command("go", "test", "-bench=.", "-count="+strconv.Itoa(count), dir)
 	cmd.Dir = mod.Path()
 
+	fmt.Printf("running %s\n", cmd.String())
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, &CmdError{
