@@ -312,7 +312,7 @@ func TestBenchModule(t *testing.T) {
 	mod, err := benchcheck.GetModule(module, modversion)
 	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
-	res, err := benchcheck.RunBench(mod)
+	res, err := benchcheck.RunBench(mod, ".")
 	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 1, len(res), "want single result, got: %v", res)
@@ -334,7 +334,7 @@ func TestBenchModuleNoBenchmarks(t *testing.T) {
 	mod, err := benchcheck.GetModule(module, modversion)
 	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
-	res, err := benchcheck.RunBench(mod)
+	res, err := benchcheck.RunBench(mod, ".")
 	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 0, len(res), "want no results, got: %v", res)

@@ -160,8 +160,8 @@ func GetModule(name string, version string) (Module, error) {
 //
 // Any errors running "go" can be inspected in detail by
 // checking if the returned is a *CmdError.
-func RunBench(mod Module) (BenchResults, error) {
-	cmd := exec.Command("go", "test", "-bench=.", "./...")
+func RunBench(mod Module, dir string) (BenchResults, error) {
+	cmd := exec.Command("go", "test", "-bench="+dir, "./...")
 	cmd.Dir = mod.Path()
 
 	out, err := cmd.CombinedOutput()
@@ -212,13 +212,13 @@ func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 //
 // Any errors running "go" can be inspected in detail by
 // checking if the returned error is a CmdError.
-func StatModule(name string, oldversion, newversion string) ([]StatResult, error) {
-	oldresults, err := benchModule(name, oldversion)
+func StatModule(name string, dir, oldversion, newversion string) ([]StatResult, error) {
+	oldresults, err := benchModule(name, dir, oldversion)
 	if err != nil {
 		return nil, fmt.Errorf("running bench for old module: %v", err)
 	}
 
-	newresults, err := benchModule(name, newversion)
+	newresults, err := benchModule(name, dir, newversion)
 	if err != nil {
 		return nil, fmt.Errorf("running bench for new module: %v", err)
 	}
@@ -282,7 +282,7 @@ func resultsReader(res BenchResults) io.Reader {
 	return strings.NewReader(strings.Join(res, "\n"))
 }
 
-func benchModule(name string, version string) (BenchResults, error) {
+func benchModule(name string, dir string, version string) (BenchResults, error) {
 	mod, err := GetModule(name, version)
 	if err != nil {
 		return nil, err
@@ -294,7 +294,7 @@ func benchModule(name string, version string) (BenchResults, error) {
 	results := BenchResults{}
 
 	for i := 0; i < benchruns; i++ {
-		res, err := RunBench(mod)
+		res, err := RunBench(mod, dir)
 		if err != nil {
 			return nil, err
 		}
