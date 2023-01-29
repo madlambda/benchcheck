@@ -99,7 +99,7 @@ func TestStatModule(t *testing.T) {
 		t.Run(tcase.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := benchcheck.StatModule(tcase.module, tcase.oldver, tcase.newver)
+			got, err := benchcheck.StatModule(tcase.module, "./...", tcase.oldver, tcase.newver)
 			assertNoError(t, err)
 
 			// We can't check everything on the result since variance
