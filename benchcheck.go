@@ -161,7 +161,7 @@ func GetModule(name string, version string) (Module, error) {
 // Any errors running "go" can be inspected in detail by
 // checking if the returned is a *CmdError.
 func RunBench(mod Module, dir string) (BenchResults, error) {
-	cmd := exec.Command("go", "test", "-bench="+dir, "./...")
+	cmd := exec.Command("go", "test", "-bench=.", dir)
 	cmd.Dir = mod.Path()
 
 	out, err := cmd.CombinedOutput()
