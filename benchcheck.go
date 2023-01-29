@@ -132,8 +132,9 @@ func (b *BenchResults) Add(res string) {
 func GetModule(name string, version string) (Module, error) {
 	// Reference: https://golang.org/ref/mod#go-mod-download
 	cmd := exec.Command("go", "mod", "download", "-json", fmt.Sprintf("%s@%s", name, version))
+	fmt.Printf("executing %s ... ", cmd.String())
 	output, err := cmd.CombinedOutput()
-
+	fmt.Printf("done\n")
 	if err != nil {
 		return Module{}, &CmdError{
 			Cmd:    cmd,
@@ -164,9 +165,12 @@ func RunBench(mod Module, dir string, count int) (BenchResults, error) {
 	cmd := exec.Command("go", "test", "-bench=.", "-count="+strconv.Itoa(count), dir)
 	cmd.Dir = mod.Path()
 
-	fmt.Printf("running %s\n", cmd.String())
+	fmt.Printf("running %s ...", cmd.String())
 
 	out, err := cmd.CombinedOutput()
+
+	fmt.Printf("output: %s\n", out)
+
 	if err != nil {
 		return nil, &CmdError{
 			Cmd:    cmd,
