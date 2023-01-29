@@ -289,10 +289,5 @@ func benchModule(name string, dir string, version string) (BenchResults, error) 
 	// benchstat requires multiple runs of the same benchmarks
 	// so it can assess statistically for abnormalities, etc.
 	const benchruns = 5
-
-	res, err := RunBench(mod, dir, benchruns)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	return RunBench(mod, dir, benchruns)
 }
