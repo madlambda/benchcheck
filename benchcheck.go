@@ -160,10 +160,31 @@ func GetModule(name string, version string) (Module, error) {
 // Any errors running "go" can be inspected in detail by
 // checking if the returned is a *CmdError.
 func RunBench(mod Module, dir string, count int, extraGoFlags ...string) (BenchResults, error) {
-	args := []string{
-		"test", "-bench=.", "-count=" + strconv.Itoa(count),
+	argsMap := map[string]string{
+		"-bench": ".",
+		"-count": strconv.Itoa(count),
 	}
-	args = append(args, extraGoFlags...)
+
+	for _, extra := range extraGoFlags {
+		argval := strings.Split(extra, "=")
+		if len(argval) == 2 {
+			argsMap[argval[0]] = argval[1]
+		} else {
+			argsMap[extra] = ""
+		}
+	}
+
+	args := []string{
+		"test",
+	}
+
+	for argName, argVal := range argsMap {
+		if argVal != "" {
+			args = append(args, fmt.Sprintf("%s=%s", argName, argVal))
+		} else {
+			args = append(args, argName)
+		}
+	}
 	args = append(args, dir)
 	cmd := exec.Command("go", args...)
 	cmd.Dir = mod.Path()

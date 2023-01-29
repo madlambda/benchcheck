@@ -312,10 +312,10 @@ func TestBenchModule(t *testing.T) {
 	mod, err := benchcheck.GetModule(module, modversion)
 	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
-	res, err := benchcheck.RunBench(mod, "./...", 5)
+	res, err := benchcheck.RunBench(mod, "./...", 5, "-count=10")
 	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
-	assert.EqualInts(t, 5, len(res), "want single result, got: %v", res)
+	assert.EqualInts(t, 10, len(res), "want single result, got: %v", res)
 	for i := 0; i < len(res); i++ {
 		if !strings.HasPrefix(res[i], "BenchmarkFake") {
 			t.Fatalf("bench result has wrong prefix: %s", res[i])
