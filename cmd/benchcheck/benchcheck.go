@@ -37,6 +37,7 @@ func main() {
 	version := flag.Bool("version", false, "show version")
 	mod := flag.String("mod", "", "module to be bench checked")
 	pkg := flag.String("pkg", ".", "package to run benchmarks")
+	extraGoFlags := flag.String("go-test-flags", "", "additional flags for the `go test` program")
 	oldRev := flag.String("old", "", "the old revision to compare")
 	newRev := flag.String("new", "", "the new revision to compare")
 
@@ -67,7 +68,9 @@ func main() {
 		log.Fatal("-new is obligatory")
 	}
 
-	results, err := benchcheck.StatModule(*mod, *pkg, *oldRev, *newRev)
+	results, err := benchcheck.StatModule(*mod, *pkg, *oldRev, *newRev,
+		strings.Split(*extraGoFlags, ",")...)
+
 	if err != nil {
 		var cmderr *benchcheck.CmdError
 		if errors.As(err, &cmderr) {

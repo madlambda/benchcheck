@@ -159,8 +159,13 @@ func GetModule(name string, version string) (Module, error) {
 //
 // Any errors running "go" can be inspected in detail by
 // checking if the returned is a *CmdError.
-func RunBench(mod Module, dir string, count int) (BenchResults, error) {
-	cmd := exec.Command("go", "test", "-bench=.", "-count="+strconv.Itoa(count), dir)
+func RunBench(mod Module, dir string, count int, extraGoFlags ...string) (BenchResults, error) {
+	args := []string{
+		"test", "-bench=.", "-count=" + strconv.Itoa(count),
+	}
+	args = append(args, extraGoFlags...)
+	args = append(args, dir)
+	cmd := exec.Command("go", args...)
 	cmd.Dir = mod.Path()
 
 	out, err := cmd.CombinedOutput()
@@ -211,13 +216,13 @@ func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 //
 // Any errors running "go" can be inspected in detail by
 // checking if the returned error is a CmdError.
-func StatModule(name string, dir, oldversion, newversion string) ([]StatResult, error) {
-	oldresults, err := benchModule(name, dir, oldversion)
+func StatModule(name string, dir, oldversion, newversion string, extraGoFlags ...string) ([]StatResult, error) {
+	oldresults, err := benchModule(name, dir, oldversion, extraGoFlags...)
 	if err != nil {
 		return nil, fmt.Errorf("running bench for old module: %v", err)
 	}
 
-	newresults, err := benchModule(name, dir, newversion)
+	newresults, err := benchModule(name, dir, newversion, extraGoFlags...)
 	if err != nil {
 		return nil, fmt.Errorf("running bench for new module: %v", err)
 	}
@@ -281,7 +286,7 @@ func resultsReader(res BenchResults) io.Reader {
 	return strings.NewReader(strings.Join(res, "\n"))
 }
 
-func benchModule(name string, dir string, version string) (BenchResults, error) {
+func benchModule(name string, dir string, version string, extraGoFlags ...string) (BenchResults, error) {
 	mod, err := GetModule(name, version)
 	if err != nil {
 		return nil, err
@@ -289,5 +294,5 @@ func benchModule(name string, dir string, version string) (BenchResults, error) 
 	// benchstat requires multiple runs of the same benchmarks
 	// so it can assess statistically for abnormalities, etc.
 	const benchruns = 5
-	return RunBench(mod, dir, benchruns)
+	return RunBench(mod, dir, benchruns, extraGoFlags...)
 }
