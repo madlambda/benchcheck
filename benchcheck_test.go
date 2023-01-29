@@ -312,15 +312,17 @@ func TestBenchModule(t *testing.T) {
 	mod, err := benchcheck.GetModule(module, modversion)
 	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
-	res, err := benchcheck.RunBench(mod, "./...")
+	res, err := benchcheck.RunBench(mod, "./...", 5)
 	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
-	assert.EqualInts(t, 1, len(res), "want single result, got: %v", res)
-	if !strings.HasPrefix(res[0], "BenchmarkFake") {
-		t.Fatalf("bench result has wrong prefix: %s", res[0])
-	}
-	if !strings.Contains(res[0], "ns/op") {
-		t.Fatalf("bench result should contain time info: %s", res[0])
+	assert.EqualInts(t, 5, len(res), "want single result, got: %v", res)
+	for i := 0; i < len(res); i++ {
+		if !strings.HasPrefix(res[i], "BenchmarkFake") {
+			t.Fatalf("bench result has wrong prefix: %s", res[i])
+		}
+		if !strings.Contains(res[i], "ns/op") {
+			t.Fatalf("bench result should contain time info: %s", res[i])
+		}
 	}
 }
 
@@ -334,7 +336,7 @@ func TestBenchModuleNoBenchmarks(t *testing.T) {
 	mod, err := benchcheck.GetModule(module, modversion)
 	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
-	res, err := benchcheck.RunBench(mod, "./...")
+	res, err := benchcheck.RunBench(mod, "./...", 5)
 	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 0, len(res), "want no results, got: %v", res)

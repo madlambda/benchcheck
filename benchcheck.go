@@ -160,8 +160,8 @@ func GetModule(name string, version string) (Module, error) {
 //
 // Any errors running "go" can be inspected in detail by
 // checking if the returned is a *CmdError.
-func RunBench(mod Module, dir string) (BenchResults, error) {
-	cmd := exec.Command("go", "test", "-bench=.", dir)
+func RunBench(mod Module, dir string, count int) (BenchResults, error) {
+	cmd := exec.Command("go", "test", "-bench=.", "-count="+strconv.Itoa(count), dir)
 	cmd.Dir = mod.Path()
 
 	out, err := cmd.CombinedOutput()
@@ -291,15 +291,9 @@ func benchModule(name string, dir string, version string) (BenchResults, error) 
 	// so it can assess statistically for abnormalities, etc.
 	const benchruns = 5
 
-	results := BenchResults{}
-
-	for i := 0; i < benchruns; i++ {
-		res, err := RunBench(mod, dir)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, res...)
+	res, err := RunBench(mod, dir, benchruns)
+	if err != nil {
+		return nil, err
 	}
-
-	return results, nil
+	return res, nil
 }
