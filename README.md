@@ -63,3 +63,5 @@ to be executed to run the benchmarks like this:
 ```sh
 benchcheck -mod cool.go.module -old v0.0.1 -new v0.0.2 -- go test -bench=BenchmarkSpecific ./specific/pkg
 ```
+
+It can be any command that will generate benchmark results with the same formatting as `go test` benchmarks.
