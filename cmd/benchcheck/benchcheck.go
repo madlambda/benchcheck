@@ -66,7 +66,7 @@ func main() {
 		log.Fatal("-new is obligatory")
 	}
 
-	results, err := benchcheck.StatModule(*mod, *oldRev, *newRev)
+	results, err := benchcheck.StatModule(benchcheck.RunBench, *mod, *oldRev, *newRev)
 	if err != nil {
 		var cmderr *benchcheck.CmdError
 		if errors.As(err, &cmderr) {
