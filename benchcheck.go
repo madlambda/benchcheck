@@ -158,15 +158,32 @@ func GetModule(name string, version string) (Module, error) {
 	return Module{path: parsedResult.Dir}, nil
 }
 
-// RunBench will run all benchmarks present at the given module
-// return the benchmark results.
+// DefaultRunBench will run all benchmarks present at the given module
+// and return the benchmark results using a default Go benchmark run running all available
+// benchmarks.
 //
 // This function relies on running the "go" command to run benchmarks.
 //
-// Any errors running "go" can be inspected in detail by
-// checking if the returned is a *CmdError.
-func RunBench(mod Module) (BenchResults, error) {
+// Any errors running "go" can be inspected in detail by checking if the returned is a *CmdError.
+func DefaultRunBench(mod Module) (BenchResults, error) {
 	cmd := exec.Command("go", "test", "-bench=.", "./...")
+	return RunBench(cmd, mod)
+}
+
+// NewBenchRunner creates a [BenchRunner] that always executes the command defined by name and args.
+func NewBenchRunner(name string, args ...string) BenchRunner {
+	return func(mod Module) (BenchResults, error) {
+		cmd := exec.Command(name, args...)
+		return RunBench(cmd, mod)
+	}
+}
+
+// RunBench will run all benchmarks present at the given module
+// and return the benchmark results using the provided [*exec.Cmd].
+// The given command is executed inside the given [Module] path.
+//
+// Any errors running the given command can be inspected in detail by checking if the returned is a *CmdError.
+func RunBench(cmd *exec.Cmd, mod Module) (BenchResults, error) {
 	cmd.Dir = mod.Path()
 
 	out, err := cmd.CombinedOutput()

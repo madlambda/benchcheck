@@ -39,26 +39,27 @@ have information on memory allocations.
 Comparing performance between two versions of a Go module
 and just showing results on output (no check performed):
 
-```
-benchcheck cool.go.module v0.0.1 v0.0.2
+```sh
+benchcheck -mod cool.go.module -old v0.0.1 -new v0.0.2
 ```
 
 Comparing performance between two versions of a Go module
 and failing on time regression:
 
-```
-benchcheck cool.go.module v0.0.1 v0.0.2 -time-delta +13.31%
-```
-
-Now doing the same but also checking for allocation regression:
-
-```
-benchcheck cool.go.module v0.0.1 v0.0.2 -alloc-delta +15% -allocs-delta +20%
+```sh
+benchcheck -mod cool.go.module -old v0.0.1 -new v0.0.2 -check time/op=13.31%
 ```
 
 You can also check if your code got faster and use the check to
 I don't know... Celebrate ? =P
 
+```sh
+benchcheck -mod cool.go.module -old v0.0.1 -new v0.0.2 -check time/op=-13.31%
 ```
-benchcheck cool.go.module v0.0.1 v0.0.2 -time-delta -20%
+
+Now lets say you want to customize how the benchmarks are run, just add the command that you wish
+to be executed to run the benchmarks like this:
+
+```sh
+benchcheck -mod cool.go.module -old v0.0.1 -new v0.0.2 -- go test -bench=BenchmarkSpecific ./specific/pkg
 ```

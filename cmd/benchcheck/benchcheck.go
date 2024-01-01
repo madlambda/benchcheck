@@ -66,7 +66,20 @@ func main() {
 		log.Fatal("-new is obligatory")
 	}
 
-	results, err := benchcheck.StatModule(benchcheck.RunBench, *mod, *oldRev, *newRev)
+	runBench := benchcheck.DefaultRunBench
+	var customizedBenchCmd []string
+
+	for i, v := range os.Args {
+		if v == "--" {
+			customizedBenchCmd = os.Args[i+1:]
+		}
+	}
+
+	if len(customizedBenchCmd) > 0 {
+		runBench = benchcheck.NewBenchRunner(customizedBenchCmd[0], customizedBenchCmd[1:]...)
+	}
+
+	results, err := benchcheck.StatModule(runBench, *mod, *oldRev, *newRev)
 	if err != nil {
 		var cmderr *benchcheck.CmdError
 		if errors.As(err, &cmderr) {
