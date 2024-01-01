@@ -237,12 +237,12 @@ func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 func StatModule(runBench BenchRunner, name string, oldversion, newversion string) ([]StatResult, error) {
 	oldresults, err := benchModule(runBench, name, oldversion)
 	if err != nil {
-		return nil, fmt.Errorf("running bench for old module: %v", err)
+		return nil, fmt.Errorf("running bench for old module: %w", err)
 	}
 
 	newresults, err := benchModule(runBench, name, newversion)
 	if err != nil {
-		return nil, fmt.Errorf("running bench for new module: %v", err)
+		return nil, fmt.Errorf("running bench for new module: %w", err)
 	}
 
 	return Stat(oldresults, newresults)
