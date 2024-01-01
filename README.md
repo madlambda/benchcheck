@@ -65,3 +65,8 @@ benchcheck -mod cool.go.module -old v0.0.1 -new v0.0.2 -- go test -bench=Benchma
 ```
 
 It can be any command that will generate benchmark results with the same formatting as `go test` benchmarks.
+To check it in action with an actual project just run:
+
+```sh
+benchcheck -mod github.com/madlambda/jtoh -old v0.1.1 -new 7979fb19fa039bef19de982b7bcb1c5b67774029
+```
