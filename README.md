@@ -1,5 +1,7 @@
 # benchcheck
 
+Moved to [codeberg.org](https://codeberg.org/madlambda/benchcheck).
+
 **benchcheck** runs benchmarks on two different versions of a Go module and
 compares statistics across them, failing on performance regressions.
 
