@@ -51,15 +51,6 @@ func TestGetModule(t *testing.T) {
 			},
 		},
 		{
-			desc:          "UsingLatest",
-			moduleName:    "github.com/madlambda/jtoh",
-			moduleVersion: "latest",
-			wantModInfo: ModuleInfo{
-				Name:    "jtoh",
-				Version: "v0.1.0",
-			},
-		},
-		{
 			desc:          "UsingCommitSha",
 			moduleName:    "github.com/madlambda/jtoh",
 			moduleVersion: "5cd825858d7dcc41c3b453ed10ecf0983b139243",
@@ -303,6 +294,10 @@ func TestChecker(t *testing.T) {
 }
 
 func TestBenchModule(t *testing.T) {
+	// Reintroduce this test after we fix the mistake of testing using "latest"
+	// now older code referenced here have tests that will fail forever because "latest" changed
+	// We will need a new modversion without tests that reference latest
+	t.Skip()
 	t.Parallel()
 
 	const (
@@ -312,7 +307,7 @@ func TestBenchModule(t *testing.T) {
 	mod, err := benchcheck.GetModule(module, modversion)
 	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
 
-	res, err := benchcheck.RunBench(mod)
+	res, err := benchcheck.DefaultRunBench(mod)
 	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
 
 	assert.EqualInts(t, 1, len(res), "want single result, got: %v", res)
@@ -322,22 +317,6 @@ func TestBenchModule(t *testing.T) {
 	if !strings.Contains(res[0], "ns/op") {
 		t.Fatalf("bench result should contain time info: %s", res[0])
 	}
-}
-
-func TestBenchModuleNoBenchmarks(t *testing.T) {
-	t.Parallel()
-
-	const (
-		module     = "github.com/madlambda/benchcheck"
-		modversion = "f15923bf230cc7331ad869fcdaac35172f8b7f38"
-	)
-	mod, err := benchcheck.GetModule(module, modversion)
-	assertNoError(t, err, "benchcheck.GetModule(%q, %q)", module, modversion)
-
-	res, err := benchcheck.RunBench(mod)
-	assertNoError(t, err, "benchcheck.RunBench(%v)", mod)
-
-	assert.EqualInts(t, 0, len(res), "want no results, got: %v", res)
 }
 
 func TestStatBenchmarkResults(t *testing.T) {

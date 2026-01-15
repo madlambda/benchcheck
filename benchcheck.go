@@ -14,52 +14,57 @@ import (
 // CheckerFmt represents the expected string format of a checker.
 const CheckerFmt = "<metric>=(+|-)<number>%"
 
-// Module represents a Go module.
-type Module struct {
-	path string
-}
+type (
+	// Module represents a Go module.
+	Module struct {
+		path string
+	}
 
-// StatResult is the full result showing performance
-// differences between two benchmark runs (set of benchmark functions)
-// for a specific metric, like time/op or speed.
-type StatResult struct {
-	// Metric is the name of metric
-	Metric string
-	// BenchDiffs has the performance diff of all function for a given metric.
-	BenchDiffs []BenchDiff
-}
+	// StatResult is the full result showing performance
+	// differences between two benchmark runs (set of benchmark functions)
+	// for a specific metric, like time/op or speed.
+	StatResult struct {
+		// Metric is the name of metric
+		Metric string
+		// BenchDiffs has the performance diff of all function for a given metric.
+		BenchDiffs []BenchDiff
+	}
 
-// BenchResults represents a single Go benchmark run. Each
-// string is the result of a single Benchmark like this:
-// - "BenchmarkName  	 50	  31735022 ns/op	  61.15 MB/s"
-type BenchResults []string
+	// BenchResults represents a single Go benchmark run. Each
+	// string is the result of a single Benchmark like this:
+	// - "BenchmarkName  	 50	  31735022 ns/op	  61.15 MB/s"
+	BenchResults []string
 
-// BenchDiff is the result showing performance differences
-// for a single benchmark function.
-type BenchDiff struct {
-	// Name of the benchmark function
-	Name string
-	// Old is the performance summary of the old benchmark.
-	Old string
-	// New is the performance summary of the new benchmark.
-	New string
-	// Delta between the old and new performance summaries.
-	Delta float64
-}
+	// BenchRunner runs benchmarks
+	BenchRunner func(Module) (BenchResults, error)
 
-// Checker performs checks on StatResult.
-type Checker struct {
-	metric    string
-	threshold float64
-	repr      string
-}
+	// BenchDiff is the result showing performance differences
+	// for a single benchmark function.
+	BenchDiff struct {
+		// Name of the benchmark function
+		Name string
+		// Old is the performance summary of the old benchmark.
+		Old string
+		// New is the performance summary of the new benchmark.
+		New string
+		// Delta between the old and new performance summaries.
+		Delta float64
+	}
 
-// CmdError represents an error running a specific command.
-type CmdError struct {
-	Cmd    *exec.Cmd
-	Err    error
-	Output string
-}
+	// Checker performs checks on StatResult.
+	Checker struct {
+		metric    string
+		threshold float64
+		repr      string
+	}
+
+	// CmdError represents an error running a specific command.
+	CmdError struct {
+		Cmd    *exec.Cmd
+		Err    error
+		Output string
+	}
+)
 
 // Error returns the string representation of the error.
 func (c *CmdError) Error() string {
@@ -153,15 +158,32 @@ func GetModule(name string, version string) (Module, error) {
 	return Module{path: parsedResult.Dir}, nil
 }
 
-// RunBench will run all benchmarks present at the given module
-// return the benchmark results.
+// DefaultRunBench will run all benchmarks present at the given module
+// and return the benchmark results using a default Go benchmark run running all available
+// benchmarks.
 //
 // This function relies on running the "go" command to run benchmarks.
 //
-// Any errors running "go" can be inspected in detail by
-// checking if the returned is a *CmdError.
-func RunBench(mod Module) (BenchResults, error) {
+// Any errors running "go" can be inspected in detail by checking if the returned is a *CmdError.
+func DefaultRunBench(mod Module) (BenchResults, error) {
 	cmd := exec.Command("go", "test", "-bench=.", "./...")
+	return RunBench(cmd, mod)
+}
+
+// NewBenchRunner creates a [BenchRunner] that always executes the command defined by name and args.
+func NewBenchRunner(name string, args ...string) BenchRunner {
+	return func(mod Module) (BenchResults, error) {
+		cmd := exec.Command(name, args...)
+		return RunBench(cmd, mod)
+	}
+}
+
+// RunBench will run all benchmarks present at the given module
+// and return the benchmark results using the provided [*exec.Cmd].
+// The given command is executed inside the given [Module] path.
+//
+// Any errors running the given command can be inspected in detail by checking if the returned is a *CmdError.
+func RunBench(cmd *exec.Cmd, mod Module) (BenchResults, error) {
 	cmd.Dir = mod.Path()
 
 	out, err := cmd.CombinedOutput()
@@ -205,22 +227,22 @@ func Stat(oldres BenchResults, newres BenchResults) ([]StatResult, error) {
 // StatModule will:
 //
 // - Download the specific versions of the given module.
-// - Run benchmarks on each of them.
+// - Run benchmarks on each of them using the provided [BenchRunner].
 // - Compare old vs new version benchmarks and return a stat results.
 //
 // This function relies on running the "go" command to run benchmarks.
 //
 // Any errors running "go" can be inspected in detail by
 // checking if the returned error is a CmdError.
-func StatModule(name string, oldversion, newversion string) ([]StatResult, error) {
-	oldresults, err := benchModule(name, oldversion)
+func StatModule(runBench BenchRunner, name string, oldversion, newversion string) ([]StatResult, error) {
+	oldresults, err := benchModule(runBench, name, oldversion)
 	if err != nil {
-		return nil, fmt.Errorf("running bench for old module: %v", err)
+		return nil, fmt.Errorf("running bench for old module: %w", err)
 	}
 
-	newresults, err := benchModule(name, newversion)
+	newresults, err := benchModule(runBench, name, newversion)
 	if err != nil {
-		return nil, fmt.Errorf("running bench for new module: %v", err)
+		return nil, fmt.Errorf("running bench for new module: %w", err)
 	}
 
 	return Stat(oldresults, newresults)
@@ -282,7 +304,7 @@ func resultsReader(res BenchResults) io.Reader {
 	return strings.NewReader(strings.Join(res, "\n"))
 }
 
-func benchModule(name string, version string) (BenchResults, error) {
+func benchModule(runBench BenchRunner, name string, version string) (BenchResults, error) {
 	mod, err := GetModule(name, version)
 	if err != nil {
 		return nil, err
@@ -294,7 +316,7 @@ func benchModule(name string, version string) (BenchResults, error) {
 	results := BenchResults{}
 
 	for i := 0; i < benchruns; i++ {
-		res, err := RunBench(mod)
+		res, err := runBench(mod)
 		if err != nil {
 			return nil, err
 		}
